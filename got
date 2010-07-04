@@ -1,0 +1,24 @@
+#!/usr/bin/env sbcl --script
+;; -*- Mode: Lisp -*-
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (let ((*standard-output* (make-broadcast-stream))
+        (*error-output* (make-broadcast-stream)))
+    (require 'asdf)
+    (require 'gotanda)))
+
+(in-package :got)
+
+(defmacro dispatch (&rest rules)
+  (let* ((argv (cdr sb-ext:*posix-argv*))
+         (command (intern (format nil "~{~:@(~a~)~^/~}" argv))))
+    `(cond
+      ,@(loop for (r b) in rules
+              if (eq t r) collect `(t ,b)
+              else collect `((equal ',command ',r) ,b)))))
+
+(dispatch
+  ;; TODO: simplify passing rest arguments to functions
+  (create/user (format t "~a" (funcall #'got:create-user)))
+  (create/task (format t "~a" (funcall #'got:create-task)))
+  (t (format t "Undefined action~%")))
