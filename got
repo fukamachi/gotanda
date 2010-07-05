@@ -13,21 +13,38 @@
   (equal rule (take (length rule) list)))
 
 (defun split-rules (rule)
-  (split-with #\/ (format nil "~(~a~)" (symbol-name rule))))
+  (split-with #\/ (format nil "~(~a~)" rule)))
+
+(defun argv-option-p (arg)
+  (and (stringp arg) (string= "--" (subseq arg 0 2))))
+
+(defun option->symbol (opt)
+  (intern (format nil "~:@(~a~)" (subseq opt 2))))
+
+(defun argv->hash (argv &optional (hash (make-hash-table)))
+  (destructuring-bind (key &rest rest) argv
+    (multiple-value-bind (value-list rest2) (take-until #'argv-option-p rest)
+      (setf (gethash (option->symbol key) hash)
+            (if (cdr value-list) value-list (car value-list)))
+      (if rest2 (argv->hash rest2 hash) hash))))
+
+(defun gethash-slice (keys hash)
+  (mapcar #'(lambda (key) `(,key ,(gethash key hash))) keys))
 
 (defmacro dispatch (&rest rules)
   `(cond
     ,@(mapcar
-       (lambda (rule)
-         (destructuring-bind (rule-symb &body body) rule
-           (if (eq t rule-symb) `(t ,body)
-             (let* ((rule-list (split-rules rule-symb))
-                    (rest-argv (nthcdr (length rule-list) (cdr sb-ext:*posix-argv*))))
-               `((rule-match-p ',rule-list)
-                 (let ((rest-argv ',rest-argv)) ,@body))))))
+       #'(lambda (rule)
+           (if (eq t (car rule)) `(t ,@(cdr rule))
+             (destructuring-bind (rule-symb vars &body body) rule
+               (let* ((rule-list (split-rules rule-symb))
+                      (rest-argv (nthcdr (length rule-list) (cdr sb-ext:*posix-argv*))))
+                 `((rule-match-p ',rule-list)
+                   (let ,(gethash-slice vars (argv->hash rest-argv))
+                     ,@body))))))
        rules)))
 
 (dispatch
-  (create/user (format t "~a" (apply #'got:create-user rest-argv)))
-  (create/task (format t "~a" (apply #'got:create-task rest-argv)))
+  (create/user (name pass) (format t "~a" (get-name (funcall #'got:create-user :name name :pass pass))))
+  (create/task (body) (format t "~a" (get-body (funcall #'got:create-task :body body))))
   (t (format t "Undefined action~%")))

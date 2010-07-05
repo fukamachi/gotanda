@@ -33,6 +33,13 @@
 (defun take (num list)
   (loop repeat num for x in list collect x))
 
+(defun take-until (pred list)
+  (labels ((rec (pred list acc)
+                (if (or (null (car list)) (funcall pred (car list)))
+                    (values acc list)
+                  (rec pred (cdr list) (nconc acc (list (car list)))))))
+    (rec pred list nil)))
+
 (defun split-with (sep string)
   (loop for i = 0 then (1+ j)
         as j = (position sep string :start i)

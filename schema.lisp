@@ -10,11 +10,11 @@
     :type integer
     :initarg :id)
    (name
-    :accessor name
+    :accessor get-name
     :type (string 20)
     :initarg :name)
    (pass
-    :accessor pass
+    :accessor get-pass
     :type (string 20)
     :initarg :pass))
   (:base-table user))
@@ -26,9 +26,9 @@
     :type integer
     :initarg :id)
    (body
-    :accessor body
+    :accessor get-body
     :type (string 1400)
-    :deadline datetime))
+    :initarg :body))
   (:base-table task))
 
 (clsql:create-view-from-class 'user :database *db*)
