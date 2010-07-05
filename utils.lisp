@@ -29,3 +29,12 @@
                         (car x)
                         (rec (cdr x) acc))))))
     (rec x nil)))
+
+(defun take (num list)
+  (loop repeat num for x in list collect x))
+
+(defun split-with (sep string)
+  (loop for i = 0 then (1+ j)
+        as j = (position sep string :start i)
+        collect (subseq string i j)
+        while j))

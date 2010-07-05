@@ -9,16 +9,25 @@
 
 (in-package :got)
 
+(defun rule-match-p (rule &optional (list (cdr sb-ext:*posix-argv*)))
+  (equal rule (take (length rule) list)))
+
+(defun split-rules (rule)
+  (split-with #\/ (format nil "~(~a~)" (symbol-name rule))))
+
 (defmacro dispatch (&rest rules)
-  (let* ((argv (cdr sb-ext:*posix-argv*))
-         (command (intern (format nil "~{~:@(~a~)~^/~}" argv))))
-    `(cond
-      ,@(loop for (r b) in rules
-              if (eq t r) collect `(t ,b)
-              else collect `((equal ',command ',r) ,b)))))
+  `(cond
+    ,@(mapcar
+       (lambda (rule)
+         (destructuring-bind (rule-symb &body body) rule
+           (if (eq t rule-symb) `(t ,body)
+             (let* ((rule-list (split-rules rule-symb))
+                    (rest-argv (nthcdr (length rule-list) (cdr sb-ext:*posix-argv*))))
+               `((rule-match-p ',rule-list)
+                 (let ((rest-argv ',rest-argv)) ,@body))))))
+       rules)))
 
 (dispatch
-  ;; TODO: simplify passing rest arguments to functions
-  (create/user (format t "~a" (funcall #'got:create-user)))
-  (create/task (format t "~a" (funcall #'got:create-task)))
+  (create/user (format t "~a" (apply #'got:create-user rest-argv)))
+  (create/task (format t "~a" (apply #'got:create-task rest-argv)))
   (t (format t "Undefined action~%")))
