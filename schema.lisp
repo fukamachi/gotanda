@@ -5,8 +5,9 @@
 (clsql:def-view-class user ()
   ((id
     :db-kind :key
-    :db-constraints (:not-null :primary-key :auto-increment)
+    :db-constraints (:not-null :unique)
     :type integer
+    :initform nil
     :initarg :id)
    (name
     :accessor get-name
@@ -23,6 +24,7 @@
     :db-kind :key
     :db-constraints (:not-null :unique)
     :type integer
+    :initform nil
     :initarg :id)
    (body
     :accessor get-body
@@ -30,5 +32,9 @@
     :initarg :body))
   (:base-table task))
 
-(ignore-errors (clsql:create-view-from-class 'user :database *db*))
-(ignore-errors (clsql:create-view-from-class 'task :database *db*))
+(defun table-exists-p (table)
+  (clsql:select 'name
+                :from (clsql:sql-expression :table 'sqlite_master)
+                :where (clsql:sql-operation '= (clsql:sql-expression :attribute 'name) table)))
+(or (table-exists-p "USER") (clsql:create-view-from-class 'user :database *db*))
+(or (table-exists-p "TASK") (clsql:create-view-from-class 'task :database *db*))

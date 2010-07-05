@@ -45,6 +45,12 @@
        rules)))
 
 (dispatch
-  (create/user (name pass) (format t "~a" (get-name (funcall #'got:create-user :name name :pass pass))))
-  (create/task (body) (format t "~a" (get-body (funcall #'got:create-task :body body))))
+  (create/user (name pass)
+    (let ((user (create-user :name name :pass pass)))
+      (clsql:update-records-from-instance user)
+      (format t "New User: ~a / ~a~%" (get-name user) (get-pass user))))
+  (create/task (body)
+    (let ((task (create-task :body body)))
+      (clsql:update-records-from-instance task)
+      (format t "New Task: ~a~%" (get-body task))))
   (t (format t "Undefined action~%")))
