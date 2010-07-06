@@ -28,9 +28,6 @@
             (if (cdr value-list) value-list (car value-list)))
       (if rest2 (argv->hash rest2 hash) hash))))
 
-(defun gethash-slice (keys hash)
-  (mapcar #'(lambda (key) `(,key ,(gethash key hash))) keys))
-
 (defmacro dispatch (&rest rules)
   `(cond
     ,@(mapcar
@@ -38,9 +35,13 @@
            (if (eq t (car rule)) `(t ,@(cdr rule))
              (destructuring-bind (rule-symb vars &body body) rule
                (let* ((rule-list (split-rules rule-symb))
-                      (rest-argv (nthcdr (length rule-list) (cdr sb-ext:*posix-argv*))))
+                      (rest-argv `(nthcdr ,(length rule-list) (cdr sb-ext:*posix-argv*)))
+                      (arghash (gensym)))
                  `((rule-match-p ',rule-list)
-                   (let ,(gethash-slice vars (argv->hash rest-argv))
+                   (let* ((,arghash (argv->hash ,rest-argv))
+                          ,@(mapcar
+                             #'(lambda (v)
+                                 `(,v (gethash ',v ,arghash))) vars))
                      ,@body))))))
        rules)))
 
