@@ -41,6 +41,13 @@ You can use from your terminal. "got" is a command line program.
 * Port to ECL
 * iPhone & Android client
 
+## For Developper
+### Unit Tests
+Gotanda List uses [lisp-unit](http://www.cs.northwestern.edu/academics/courses/325/readings/lisp-unit.html) for testing.
+
+    * (require 'asdf-install)
+    * (asdf-install:install "http://repo.or.cz/w/lisp-unit.git/snapshot/HEAD.tar.gz")
+
 ## License
 
 Copyright (C) 2010 Eitarow Fukamachi <e.arrows@gmail.com>
