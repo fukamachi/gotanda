@@ -6,6 +6,6 @@
     (require 'gotanda)))
 
 (in-package :lisp-unit)
-(define-test find-user
-  (assert-equal nil (got:find-user :name "fukamachi")))
+(define-test find-task
+  (assert-equal nil (got:find-task :body "Buy Milk")))
 (run-tests)

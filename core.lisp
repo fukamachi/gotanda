@@ -22,7 +22,5 @@
                    :from (clsql:sql-expression :table ',table)
                    :where (build-where ,@(mapcar #'(lambda (a) `(list ',a ,a)) args)))))
 
-(def-create user (name pass))
 (def-create task (body))
-(def-find user (id name pass))
 (def-find task (id body))

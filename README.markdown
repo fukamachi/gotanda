@@ -23,14 +23,11 @@ Have another problem? Report me.
 ## Run
 
     * (asdf:oos 'asdf:load-op :gotanda)
-    * (got:create-user :name "fukamachi" :pass "password")
     * (got:create-task :body "Buy Milk")
     * (got:find-task :id 1)
 
 You can use from your terminal. "got" is a command line program.
 
-    $ got create user --name "fukamachi" --pass "password"
-    New User: fukamachi / password
     $ got create task --body "Buy Milk"
     New Task: Buy Milk
     $ got find task --id 1

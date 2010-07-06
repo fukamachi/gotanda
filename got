@@ -47,10 +47,6 @@
        rules)))
 
 (dispatch
-  (create/user (name pass)
-    (let ((user (create-user :name name :pass pass)))
-      (clsql:update-records-from-instance user)
-      (format t "New User: ~a / ~a~%" (get-name user) (get-pass user))))
   (create/task (body)
     (let ((task (create-task :body body)))
       (clsql:update-records-from-instance task)
