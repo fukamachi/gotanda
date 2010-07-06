@@ -14,7 +14,7 @@ asdf-install should resolve dependencies, but not works better. So, you may have
     $ ln -s gotanda/gotanda.asd ../systems
     $ sbcl
     * (require 'asdf)
-    * (asdf:oos 'load-op :gotanda)
+    * (asdf:oos 'asdf:load-op :gotanda)
 
 Have another problem? Report me.
 
