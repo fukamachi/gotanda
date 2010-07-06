@@ -5,15 +5,16 @@
 This software is developed with SBCL 1.0.32.
 
 Depends on CLSQL.
-
 ## Installation
 
+asdf-install should resolve dependencies, but not works better. So, you may have to ensure CLSQL is installed before. That's very problematic. Good luck.
+
+    $ cd ~/.sbcl/site
+    $ git clone git://github.com/fukamachi/gotanda.git
+    $ ln -s gotanda/gotanda.asd ../systems
     $ sbcl
     * (require 'asdf)
-    * (require 'asdf-install)
-    * (asdf-install:install "http://github.com/fukamachi/gotanda/tarball/master")
-
-asdf-install should resolve dependencies, but not works better. So, you may have to ensure CLSQL is installed before. That's very problematic. Good luck.
+    * (asdf:oos 'load-op :gotanda)
 
 Have another problem? Report me.
 
@@ -32,6 +33,14 @@ You can use from your terminal. "got" is a command line program.
     New Task: Buy Milk
     $ got find task --id 1
     Found: (1 Buy Milk)
+
+## Roadmap
+
+* Command line program
+* Synchronize with a Web server
+* Web interface
+* Port to ECL
+* iPhone & Android client
 
 ## License
 
