@@ -45,3 +45,12 @@
         as j = (position sep string :start i)
         collect (subseq string i j)
         while j))
+
+;;==================
+;; For debug
+;;==================
+(defmacro mac (expr)
+  `(pprint (macroexpand-1 ',expr)))
+
+(defmacro print-form-and-results (form)
+  `(format t "~&~A --> ~S~%" (write-to-string ',form) ,form))
