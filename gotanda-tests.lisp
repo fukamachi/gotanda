@@ -1,6 +1,5 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (let ((*standard-output* (make-broadcast-stream))
-        (*error-output* (make-broadcast-stream)))
+  (let ((*standard-output* (make-broadcast-stream)))
     (require 'asdf)
     (require 'lisp-unit)
     (require 'gotanda)))
