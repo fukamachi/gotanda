@@ -13,13 +13,14 @@
   (equal rule (take (length rule) list)))
 
 (defun split-rules (rule)
-  (split-with #\/ (format nil "~(~a~)" rule)))
+  (split-with #\/ (string-downcase rule)))
 
 (defun argv-option-p (arg)
-  (and (stringp arg) (string= "--" (subseq arg 0 2))))
+  (and (stringp arg)
+       (not (string= arg (string-left-trim "--" arg)))))
 
 (defun option->symbol (opt)
-  (intern (format nil "~:@(~a~)" (subseq opt 2))))
+  (intern (string-upcase (subseq opt 2))))
 
 (defun argv->hash (argv &optional (hash (make-hash-table)))
   (destructuring-bind (key &rest rest) argv
