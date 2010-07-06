@@ -13,6 +13,10 @@ Depends on CLSQL.
     * (require 'asdf-install)
     * (asdf-install:install "http://github.com/fukamachi/gotanda/tarball/master")
 
+asdf-install should resolve dependencies, but not works better. So, you may have to ensure CLSQL is installed before. That's very problematic. Good luck.
+
+Have another problem? Report me.
+
 ## Run
 
     * (asdf:oos 'asdf:load-op :gotanda)
