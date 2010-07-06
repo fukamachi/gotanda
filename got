@@ -1,4 +1,4 @@
-#!/usr/bin/env sbcl --script
+#!/usr/local/bin/sbcl --script
 ;; -*- Mode: Lisp -*-
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
