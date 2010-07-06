@@ -55,4 +55,8 @@
     (let ((task (create-task :body body)))
       (clsql:update-records-from-instance task)
       (format t "New Task: ~a~%" (get-body task))))
+  (find/task (id body)
+    (aif (find-task :id id :body body)
+         (format t "~{Found: ~a~%~}" it)
+         (format t "Not Found~%")))
   (t (format t "Undefined action~%")))

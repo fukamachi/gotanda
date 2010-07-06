@@ -22,6 +22,7 @@ Have another problem? Report me.
     * (asdf:oos 'asdf:load-op :gotanda)
     * (got:create-user :name "fukamachi" :pass "password")
     * (got:create-task :body "Buy Milk")
+    * (got:find-task :id 1)
 
 You can use from your terminal. "got" is a command line program.
 
@@ -29,6 +30,8 @@ You can use from your terminal. "got" is a command line program.
     New User: fukamachi / password
     $ got create task --body "Buy Milk"
     New Task: Buy Milk
+    $ got find task --id 1
+    Found: (1 Buy Milk)
 
 ## License
 

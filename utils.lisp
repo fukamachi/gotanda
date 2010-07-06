@@ -1,5 +1,9 @@
 (in-package :got)
 
+(defmacro aif (test-form then-form &optional else-form)
+  `(let ((it ,test-form))
+     (if it ,then-form ,else-form)))
+
 (defun concat-symbol-pkg (pkg &rest args)
   (declare (dynamic-extent args))
   (flet ((stringify (arg)
