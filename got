@@ -46,8 +46,8 @@
        rules)))
 
 (dispatch
-  (create/task (body)
-    (let ((task (create-task :body body)))
+  (create/task (body deadline)
+    (let ((task (create-task :body body :deadline deadline)))
       (clsql:update-records-from-instance task)
       (format t "New Task: ~a~%" (get-body task))))
   (find/task (id body)

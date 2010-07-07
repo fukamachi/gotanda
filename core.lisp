@@ -1,12 +1,5 @@
 (in-package :got)
 
-(defmacro def-create (table args)
-  `(defun ,(concat-symbol 'create- table) (&key ,@args)
-     (make-instance ',table
-                    ,@(flatten
-                       (loop for x in args
-                             collect (list (concat-symbol-pkg :KEYWORD x) x))))))
-
 (defun build-where (&rest args)
   (apply #'clsql:sql-operation 'and
          (loop for (k v) in args
@@ -22,5 +15,13 @@
                    :from (clsql:sql-expression :table ',table)
                    :where (build-where ,@(mapcar #'(lambda (a) `(list ',a ,a)) args)))))
 
-(def-create task (body))
+(defun parse-tags (body)
+  (remove-duplicates
+   (cl-ppcre:all-matches-as-strings "(?:(?<=\\W)|(?<=^))#\\w+" body)
+   :test #'string=))
+
+(defun create-task (&key body deadline)
+  (let ((tags (parse-tags body)))
+    (make-instance 'task :body body :deadline deadline :tags tags)))
+
 (def-find task (id body))
