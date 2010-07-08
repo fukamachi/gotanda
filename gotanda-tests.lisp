@@ -30,7 +30,9 @@
     (assert-true task)
     (assert-equal "Buy Milk" (get-body task))
     (clsql:update-records-from-instance task))
-  (assert-equal '((1 "Buy Milk")) (find-task :body "Buy Milk")))
+  (let ((task (find-task :body "Buy Milk")))
+    (assert-equal 1 (get-id task))
+    (assert-equal "Buy Milk" (get-body task))))
 
 ;;====================
 ;; Test End

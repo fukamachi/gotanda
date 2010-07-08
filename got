@@ -53,7 +53,7 @@
       (format t "New Task: ~a~%" (get-body task))))
   (find/task (id body)
     (aif (find-task :id id :body body)
-         (format t "~{Found: ~a~%~}" it)
+         (format t "Id: ~a~%Deadline: ~a~%Body: ~a~%" (get-id it) (get-deadline it) (get-body it))
          (format t "Not Found~%")))
   (list/task (tag)
     (dolist (task (list-task :tag tag))
