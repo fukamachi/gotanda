@@ -49,9 +49,7 @@
     :accessor get-name))
   (:base-table tag))
 
-(defun table-exists-p (table)
-  (clsql:select 'name
-                :from (clsql:sql-expression :table 'sqlite_master)
-                :where (clsql:sql-operation '= (clsql:sql-expression :attribute 'name) table)))
-(or (table-exists-p "TASK") (clsql:create-view-from-class 'task :database *db*))
-(or (table-exists-p "TAG") (clsql:create-view-from-class 'tag :database *db*))
+;; create tables if it does not exist
+(dolist (table '(task tag))
+  (or (clsql:table-exists-p (symbol-name table))
+      (clsql:create-view-from-class table)))
