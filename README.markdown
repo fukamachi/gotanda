@@ -36,10 +36,19 @@ You can use from your terminal. "got" is a command line program.
 * New Task
 
     Usage: got create task \[--body "BODY"\]\[--deadline "yyyy-MM-dd hh:mm:ss"\]
+    
+      --body: write some texts for a description of the task.
+    
+      --deadline: write it's deadline
 
 * See Tasks
 
-    Usage: got list task \[--tag "#hashtag"\]
+    Usage: got list task \[--tag "#hashtag"\]\[--deadline "pred yyyy-MM-dd"\]
+    
+      --tag: specify hashtag (begin with '#').
+    
+      --deadline: filter with a deadline, before or after. Below example shows a list of tasks which the deadline is after "2003-04-07".
+          got list task --deadline "< 2003-04-07"
 
 ## Roadmap
 
