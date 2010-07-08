@@ -28,7 +28,7 @@
          (get-tag name))))
 
 (defun get-tag-id (name)
-  (car (clsql:select 'id :from 'tag :where (clsql:sql-operation '= 'name tag) :flatp t)))
+  (car (clsql:select 'id :from 'tag :where (clsql:sql-operation '= 'name name) :flatp t)))
 
 (defun create-task (&key body deadline)
   (let* ((tags (mapcar #'get-tag (parse-tags body))))
