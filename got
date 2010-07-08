@@ -27,7 +27,7 @@
         (multiple-value-bind (value-list rest2) (take-until #'argv-option-p rest)
           (setf (gethash (option->symbol key) hash)
                 (if (cdr value-list) value-list (car value-list)))
-          (if rest2 (argv->hash rest2 hash) hash)))))
+          (argv->hash rest2 hash)))))
 
 (defmacro dispatch (&rest rules)
   `(cond
@@ -36,7 +36,7 @@
            (if (eq t (car rule)) `(t ,@(cdr rule))
              (destructuring-bind (rule-symb vars &body body) rule
                (let* ((rule-list (split-rules rule-symb))
-                      (rest-argv `(nthcdr ,(length rule-list) (cdr sb-ext:*posix-argv*)))
+                      (rest-argv `(nthcdr ,(1+ (length rule-list)) sb-ext:*posix-argv*))
                       (arghash (gensym)))
                  `((rule-match-p ',rule-list)
                    (let* ((,arghash (argv->hash ,rest-argv))
