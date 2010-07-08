@@ -22,18 +22,27 @@
          (get-tag name))))
 
 (defun get-tag-id (name)
-  (select-one tag :name name))
+  (car (clsql:select 'id :from 'tag :where (clsql:sql-operation '= 'name name) :flatp t)))
 
 (defun create-task (&key body deadline)
   (let* ((tags (mapcar #'get-tag (parse-tags body))))
     (make-instance 'task :body body :deadline deadline :tags (mapcar #'get-id tags))))
 
-(defun find-task (&key id body)
-  (select-one task :id id :body body))
+(defun filter-by-tag (tag tasks)
+  (if tag
+      (let ((tag-id (get-tag-id tag)))
+        (remove-if-not #'(lambda (task) (member tag-id (get-tags task))) tasks))
+      tasks))
 
-(defun list-task (&key tag)
+(defun filter-by-deadline (deadline tasks)
+  (if deadline
+      (remove-if-not #'(lambda (task)
+                         (if (listp deadline)
+                             (apply (car deadline) (cadr deadline))
+                             (member deadline (get-deadline task)))) tasks)
+      tasks))
+
+(defun list-task (&key tag deadline)
   (let ((tasks (clsql:select 'task :flatp t)))
-    (if tag
-        (let ((tag-id (get-tag-id tag)))
-          (remove-if-not #'(lambda (task) (member tag-id (get-tags task))) tasks))
-        tasks)))
+    (aand (filter-by-tag tag tasks)
+          (filter-by-deadline deadline it))))

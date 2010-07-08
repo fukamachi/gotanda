@@ -4,6 +4,11 @@
   `(let ((it ,test-form))
      (if it ,then-form ,else-form)))
 
+(defmacro aand (&rest args)
+  (cond ((null args) t)
+	((null (cdr args)) (car args))
+	(t `(aif ,(car args) (aand ,@(cdr args))))))
+
 (defun concat-symbol-pkg (pkg &rest args)
   (declare (dynamic-extent args))
   (flet ((stringify (arg)
