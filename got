@@ -54,4 +54,7 @@
     (aif (find-task :id id :body body)
          (format t "~{Found: ~a~%~}" it)
          (format t "Not Found~%")))
+  (list/task (tag)
+    (dolist (task (list-task :tag tag))
+      (format t "~a: ~a~%" (get-id task) (get-body task))))
   (t (format t "Undefined action~%")))
