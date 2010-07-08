@@ -4,19 +4,37 @@
     (require 'lisp-unit)
     (require 'gotanda)))
 
-(in-package :got)
-;; use in-memory database
-(setq *db* (clsql:connect '(":memory:") :database-type :sqlite3 :if-exists :old))
-(clsql:create-view-from-class 'task :database *db*)
+;;====================
+;; Initialize
+;;====================
+(in-package :clsql)
+(start-transaction)
 
-(in-package :lisp-unit)
+;; drop all tables and create it again
+(dolist (table-str (list-tables))
+  (let ((table (intern table-str :got)))
+    (drop-table table)
+    (create-view-from-class table)))
+
+(in-package :got)
+(loop for p in '(define-test assert-eq assert-equal assert-true run-tests)
+   do (shadowing-import (concat-symbol-pkg :lisp-unit p)))
+
+;;====================
+;; Test Start
+;;====================
 
 (define-test task
-  (assert-eq nil (got:find-task :body "Buy Milk"))
-  (let ((task (got:create-task :body "Buy Milk")))
+  (assert-eq nil (find-task :body "Buy Milk"))
+  (let ((task (create-task :body "Buy Milk")))
     (assert-true task)
-    (assert-equal "Buy Milk" (got:get-body task))
+    (assert-equal "Buy Milk" (get-body task))
     (clsql:update-records-from-instance task))
-  (assert-equal '((1 "Buy Milk")) (got:find-task :body "Buy Milk")))
+  (assert-equal '((1 "Buy Milk")) (find-task :body "Buy Milk")))
+
+;;====================
+;; Test End
+;;====================
 
 (run-tests)
+(clsql:rollback)
