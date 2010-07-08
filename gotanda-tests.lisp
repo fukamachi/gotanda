@@ -24,13 +24,13 @@
 ;; Test Start
 ;;====================
 
-(define-test task
+(define-test create-task
   (assert-eq nil (select-one task :body "Buy Milk"))
   (let ((task (create-task :body "Buy Milk")))
     (assert-true task)
-    (assert-equal "Buy Milk" (get-body task))
-    (clsql:update-records-from-instance task))
+    (assert-equal "Buy Milk" (get-body task)))
   (let ((task (select-one task :body "Buy Milk")))
+    (assert-true task)
     (assert-equal 1 (get-id task))
     (assert-equal "Buy Milk" (get-body task))))
 

@@ -49,7 +49,6 @@
 (dispatch
   (create/task (body deadline)
     (let ((task (create-task :body body :deadline deadline)))
-      (clsql:update-records-from-instance task)
       (format t "New Task: ~a~%" (get-body task))))
   (list/task (tag)
     (dolist (task (list-task :tag tag))

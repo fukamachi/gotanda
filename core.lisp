@@ -25,8 +25,13 @@
   (car (clsql:select 'id :from 'tag :where (clsql:sql-operation '= 'name name) :flatp t)))
 
 (defun create-task (&key body deadline)
-  (let* ((tags (mapcar #'get-tag (parse-tags body))))
-    (make-instance 'task :body body :deadline deadline :tags (mapcar #'get-id tags))))
+  (let* ((tags (mapcar #'get-tag (parse-tags body)))
+         (task (make-instance 'task
+                              :body body
+                              :deadline deadline
+                              :tags (mapcar #'get-id tags))))
+    (clsql:update-records-from-instance task)
+    task))
 
 (defun filter-by-tag (tag tasks)
   (if tag
