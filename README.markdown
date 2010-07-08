@@ -5,6 +5,7 @@
 This software is developed with SBCL 1.0.32.
 
 Depends on CLSQL and cl-ppcre.
+
 ## Installation
 
 asdf-install should resolve dependencies, but not works better. So, you may have to ensure CLSQL is installed before. That's very problematic. Good luck.
@@ -32,6 +33,16 @@ You can use from your terminal. "got" is a command line program.
     New Task: Buy Milk
     $ got find task --id 1
     Found: (1 Buy Milk)
+
+## Command Line Interface
+
+* New Task
+
+    Usage: got create task \[--body "BODY"\]\[--deadline "yyyy-MM-dd hh:mm:ss"\]
+
+* See Tasks
+
+    Usage: got list task \[--tag "#hashtag"\]
 
 ## Roadmap
 
