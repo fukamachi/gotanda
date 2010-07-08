@@ -25,12 +25,12 @@
 ;;====================
 
 (define-test task
-  (assert-eq nil (find-task :body "Buy Milk"))
+  (assert-eq nil (select-one task :body "Buy Milk"))
   (let ((task (create-task :body "Buy Milk")))
     (assert-true task)
     (assert-equal "Buy Milk" (get-body task))
     (clsql:update-records-from-instance task))
-  (let ((task (find-task :body "Buy Milk")))
+  (let ((task (select-one task :body "Buy Milk")))
     (assert-equal 1 (get-id task))
     (assert-equal "Buy Milk" (get-body task))))
 

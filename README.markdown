@@ -25,14 +25,11 @@ Have another problem? Report me.
 
     * (asdf:oos 'asdf:load-op :gotanda)
     * (got:create-task :body "Buy Milk")
-    * (got:find-task :id 1)
 
 You can use from your terminal. "got" is a command line program.
 
     $ got create task --body "Buy Milk"
     New Task: Buy Milk
-    $ got find task --id 1
-    Found: (1 Buy Milk)
 
 ## Command Line Interface
 
