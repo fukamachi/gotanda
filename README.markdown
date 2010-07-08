@@ -40,6 +40,8 @@ You can use from your terminal. "got" is a command line program.
 * Web interface
 * Port to ECL
 * iPhone & Android client
+* Bookmarklet
+* iGoogle Gadget
 
 ## For Developper
 ### Unit Tests
