@@ -22,11 +22,12 @@
   (intern (string-upcase (subseq opt 2))))
 
 (defun argv->hash (argv &optional (hash (make-hash-table)))
-  (destructuring-bind (key &rest rest) argv
-    (multiple-value-bind (value-list rest2) (take-until #'argv-option-p rest)
-      (setf (gethash (option->symbol key) hash)
-            (if (cdr value-list) value-list (car value-list)))
-      (if rest2 (argv->hash rest2 hash) hash))))
+  (if (null argv) hash
+      (destructuring-bind (key &rest rest) argv
+        (multiple-value-bind (value-list rest2) (take-until #'argv-option-p rest)
+          (setf (gethash (option->symbol key) hash)
+                (if (cdr value-list) value-list (car value-list)))
+          (if rest2 (argv->hash rest2 hash) hash)))))
 
 (defmacro dispatch (&rest rules)
   `(cond
