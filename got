@@ -22,11 +22,12 @@
   (intern (string-upcase (subseq opt 2))))
 
 (defun argv->hash (argv &optional (hash (make-hash-table)))
-  (destructuring-bind (key &rest rest) argv
-    (multiple-value-bind (value-list rest2) (take-until #'argv-option-p rest)
-      (setf (gethash (option->symbol key) hash)
-            (if (cdr value-list) value-list (car value-list)))
-      (if rest2 (argv->hash rest2 hash) hash))))
+  (if (null argv) hash
+      (destructuring-bind (key &rest rest) argv
+        (multiple-value-bind (value-list rest2) (take-until #'argv-option-p rest)
+          (setf (gethash (option->symbol key) hash)
+                (if (cdr value-list) value-list (car value-list)))
+          (argv->hash rest2 hash)))))
 
 (defmacro dispatch (&rest rules)
   `(cond
@@ -35,7 +36,7 @@
            (if (eq t (car rule)) `(t ,@(cdr rule))
              (destructuring-bind (rule-symb vars &body body) rule
                (let* ((rule-list (split-rules rule-symb))
-                      (rest-argv `(nthcdr ,(length rule-list) (cdr sb-ext:*posix-argv*)))
+                      (rest-argv `(nthcdr ,(1+ (length rule-list)) sb-ext:*posix-argv*))
                       (arghash (gensym)))
                  `((rule-match-p ',rule-list)
                    (let* ((,arghash (argv->hash ,rest-argv))
@@ -46,12 +47,15 @@
        rules)))
 
 (dispatch
-  (create/task (body)
-    (let ((task (create-task :body body)))
+  (create/task (body deadline)
+    (let ((task (create-task :body body :deadline deadline)))
       (clsql:update-records-from-instance task)
       (format t "New Task: ~a~%" (get-body task))))
   (find/task (id body)
     (aif (find-task :id id :body body)
          (format t "~{Found: ~a~%~}" it)
          (format t "Not Found~%")))
+  (list/task (tag)
+    (dolist (task (list-task :tag tag))
+      (format t "~a: ~a~%" (get-id task) (get-body task))))
   (t (format t "Undefined action~%")))

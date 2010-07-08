@@ -4,7 +4,7 @@
 
 This software is developed with SBCL 1.0.32.
 
-Depends on CLSQL.
+Depends on CLSQL and cl-ppcre.
 ## Installation
 
 asdf-install should resolve dependencies, but not works better. So, you may have to ensure CLSQL is installed before. That's very problematic. Good luck.
