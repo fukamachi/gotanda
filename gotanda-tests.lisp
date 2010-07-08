@@ -35,7 +35,7 @@
     (assert-equal "Buy Milk" (get-body task))))
 
 (define-test list-task
-  (create-task :body "Produce Astro Boy #invent" :deadline (clsql:make-time :year 2003 :month 4 :day 7))
+  (create-task :body "Produce Astro Boy #invent" :deadline "2003-04-07")
   (assert-true (list-task :tag "#invent"))
   (assert-true (list-task :deadline (list '< (clsql:get-time))))
   (assert-true (list-task :deadline (list '> (clsql:make-time)))))

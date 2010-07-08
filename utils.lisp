@@ -6,8 +6,8 @@
 
 (defmacro aand (&rest args)
   (cond ((null args) t)
-	((null (cdr args)) (car args))
-	(t `(aif ,(car args) (aand ,@(cdr args))))))
+        ((null (cdr args)) (car args))
+        (t `(aif ,(car args) (aand ,@(cdr args))))))
 
 (defun concat-symbol-pkg (pkg &rest args)
   (declare (dynamic-extent args))
