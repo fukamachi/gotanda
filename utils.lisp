@@ -68,6 +68,12 @@
         collect (subseq string i j)
         while j))
 
+;; FIXME: this won't work wall-time (only Date, for example "2003-04-07")
+(defun str->date (str)
+  (cl-ppcre:register-groups-bind ((#'parse-integer year) (#'parse-integer month) (#'parse-integer day))
+      ("(\\d{4})-(\\d{2})-(\\d{2})" str)
+      (clsql:make-time :year year :month month :day day)))
+
 ;;==================
 ;; For debug
 ;;==================

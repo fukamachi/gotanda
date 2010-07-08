@@ -28,26 +28,28 @@
   (let* ((tags (mapcar #'get-tag (parse-tags body)))
          (task (make-instance 'task
                               :body body
-                              :deadline deadline
+                              :deadline (str->date deadline)
                               :tags (mapcar #'get-id tags))))
     (clsql:update-records-from-instance task)
     task))
 
+(defmacro filter-> (target &rest by)
+  `(aand ,target
+         ,@(mapcar #'(lambda (b)
+                       `(if ,b (,(concat-symbol 'filter-by- b) ,b it) it)) by)))
+
 (defun filter-by-tag (tag tasks)
-  (if tag
-      (let ((tag-id (get-tag-id tag)))
-        (remove-if-not #'(lambda (task) (member tag-id (get-tags task))) tasks))
-      tasks))
+  (let ((tag-id (get-tag-id tag)))
+    (remove-if-not #'(lambda (task) (member tag-id (get-tags task))) tasks)))
 
 (defun filter-by-deadline (deadline tasks)
-  (if deadline
-      (remove-if-not #'(lambda (task)
-                         (if (listp deadline)
-                             (apply (car deadline) (cadr deadline))
-                             (member deadline (get-deadline task)))) tasks)
-      tasks))
+  (let ((compare-fn (concat-symbol-pkg :clsql 'time (car deadline))))
+    (remove-if-not #'(lambda (task)
+                       (and (get-deadline task)
+                            (funcall compare-fn
+                                     (get-deadline task) (cadr deadline))))
+                   tasks)))
 
 (defun list-task (&key tag deadline)
-  (let ((tasks (clsql:select 'task :flatp t)))
-    (aand (filter-by-tag tag tasks)
-          (filter-by-deadline deadline it))))
+  (filter-> (clsql:select 'task :flatp t)
+            tag deadline))

@@ -17,7 +17,7 @@
     :initarg :body)
    (deadline
     :accessor get-deadline
-    :type clsql:date
+    :type clsql:wall-time
     :initform nil
     :initarg :deadline)
    (tags
@@ -26,7 +26,6 @@
     :initarg :tags
     :initform nil)
    (tag-id
-    :accessor get-tag-id
     :db-kind :join
     :db-info (:join-class tag
               :home-key tags
