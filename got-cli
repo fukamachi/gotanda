@@ -1,9 +1,6 @@
 #!/usr/local/bin/sbcl --script
 ;; -*- Mode: Lisp -*-
 
-(format *terminal-io* "Loading...")
-(force-output *terminal-io*)
-
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (let ((*standard-output* (make-broadcast-stream)))
     (require 'asdf)
@@ -11,8 +8,8 @@
 
 (in-package :got)
 
-(defun rule-match-p (rule target)
-  (equal rule (take (length rule) target)))
+(defun rule-match-p (rule &optional (list (cdr sb-ext:*posix-argv*)))
+  (equal rule (take (length rule) list)))
 
 (defun split-rules (rule)
   (split-with #\/ (string-downcase rule)))
@@ -32,16 +29,16 @@
                 (if (cdr value-list) value-list (car value-list)))
           (argv->hash rest2 hash)))))
 
-(defmacro dispatch (target-rule &rest rules)
+(defmacro dispatch (&rest rules)
   `(cond
     ,@(mapcar
        #'(lambda (rule)
            (if (eq t (car rule)) `(t ,@(cdr rule))
              (destructuring-bind (rule-symb vars &body body) rule
                (let* ((rule-list (split-rules rule-symb))
-                      (rest-argv `(nthcdr ,(length rule-list) ,target-rule))
+                      (rest-argv `(nthcdr ,(1+ (length rule-list)) sb-ext:*posix-argv*))
                       (arghash (gensym)))
-                 `((rule-match-p ',rule-list ,target-rule)
+                 `((rule-match-p ',rule-list)
                    (let* ((,arghash (argv->hash ,rest-argv))
                           ,@(mapcar
                              #'(lambda (v)
@@ -49,23 +46,15 @@
                      ,@body))))))
        rules)))
 
-(defun run-dispatch (input-rule)
-  (dispatch input-rule
-    (create (body deadline)
-            (let ((task (create-task :body body :deadline deadline)))
-              (format t "New Task: ~a~%" (get-body task))))
-    (list (tag deadline)
-          (dolist (task (list-task :tag tag
-                                   :deadline (and deadline
-                                                  (destructuring-bind (compare-fn datestr)
-                                                      (split-with #\Space deadline)
-                                                    (list (intern compare-fn) (str->date datestr))))))
-            (format t "~a: ~a~%" (get-id task) (get-body task))))
-    (t (format t "Undefined action~%"))))
-
-(format *terminal-io* "Done.~%")
-
-(loop for input = (prompt-read ">")
-     with clsql:*default-caching* = nil
-     until (zerop (length input))
-     do (run-dispatch (split-params input)))
+(dispatch
+  (create/task (body deadline)
+    (let ((task (create-task :body body :deadline deadline)))
+      (format t "New Task: ~a~%" (get-body task))))
+  (list/task (tag deadline)
+    (dolist (task (list-task :tag tag
+                             :deadline (and deadline
+                                            (destructuring-bind (compare-fn datestr)
+                                                (split-with #\Space deadline)
+                                              (list (intern compare-fn) (str->date datestr))))))
+      (format t "~a: ~a~%" (get-id task) (get-body task))))
+  (t (format t "Undefined action~%")))
