@@ -1,4 +1,5 @@
 (in-package :got)
+(cl-interpol:enable-interpol-syntax)
 
 (defmacro aif (test-form then-form &optional else-form)
   `(let ((it ,test-form))
@@ -9,6 +10,9 @@
         ((null (cdr args)) (car args))
         (t `(aif ,(car args) (aand ,@(cdr args))))))
 
+(defun concat (&rest strs)
+  (apply #'concatenate 'string strs))
+
 (defun concat-symbol-pkg (pkg &rest args)
   (declare (dynamic-extent args))
   (flet ((stringify (arg)
@@ -17,7 +21,7 @@
               (string-upcase arg))
              (symbol
               (symbol-name arg)))))
-    (let ((str (apply #'concatenate 'string (mapcar #'stringify args))))
+    (let ((str (apply #'concat (mapcar #'stringify args))))
       (nth-value 0 (intern str (if pkg pkg *package*))))))
 
 (defun concat-symbol (&rest args)
@@ -72,6 +76,19 @@
   (cl-ppcre:register-groups-bind ((#'parse-integer year) (#'parse-integer month) (#'parse-integer day) (#'parse-integer hour) (#'parse-integer minute) (#'parse-integer second))
       ("(\\d{4})-(\\d{1,2})-(\\d{1,2})(?: (\\d{1,2}):(\\d{1,2}):(\\d{1,2}))?" str)
       (clsql:make-time :year year :month month :day day :hour (or hour 0) :minute (or minute 0) :second (or second 0))))
+
+(defun prompt-read (prompt)
+  (format *query-io* "~a " prompt)
+  (force-output *query-io*)
+  (read-line *query-io* nil))
+
+(defun split-params (param-str)
+  (remove-if #'(lambda (s) (string= "" s))
+    (cl-ppcre:split "\0"
+      (aand param-str
+            (cl-ppcre:regex-replace-all #?/\"(.+?)\s+([^\"]+?)\"/ it #?/\1\\ \2/)
+            (cl-ppcre:regex-replace-all #?/(?<!\\)\s/ it "\0")
+            (cl-ppcre:regex-replace-all #?/\\(\s)/ it "\\1")))))
 
 ;;==================
 ;; For debug

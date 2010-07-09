@@ -2,7 +2,9 @@
   (let ((*standard-output* (make-broadcast-stream)))
     (require 'asdf)
     (require 'lisp-unit)
+    (require 'cl-interpol)
     (require 'gotanda)))
+(cl-interpol:enable-interpol-syntax)
 
 ;;====================
 ;; Initialize
@@ -40,6 +42,13 @@
   (assert-time (str->date "2003-4-7") 2003 4 7)
   (assert-time (str->date "2003-21-32") 2003 21 32)
   (assert-time (str->date "1987-10-3 18:11:29") 1987 10 3 18 11 29))
+
+(define-test split-params
+  (assert-equal '("create" "task" "--body" "Buy Milk")
+                (split-params "create task --body \"Buy Milk\""))
+  (assert-equal '("create task" "--body" "Buy Milk")
+                (split-params "create\\ task --body \"Buy Milk\""))
+  (assert-equal '("create" "task") (split-params #?"  create\t task  \n")))
 
 (define-test create-task
   (assert-eq nil (select-one task :body "Buy Milk"))
