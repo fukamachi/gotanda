@@ -91,6 +91,10 @@
             (cl-ppcre:regex-replace-all #?/(?<!\\)\s/ it #?"\0")
             (cl-ppcre:regex-replace-all #?/\\(\s)/ it "\\1")))))
 
+(defmacro set-slot (obj &body body)
+  `(setf ,@(loop for (slot val) in (group body 2)
+              append `((slot-value ,obj ,slot) ,val))))
+
 ;;==================
 ;; For debug
 ;;==================
