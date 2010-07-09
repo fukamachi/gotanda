@@ -48,7 +48,8 @@
                 (split-params "create task --body \"Buy Milk\""))
   (assert-equal '("create task" "--body" "Buy Milk")
                 (split-params "create\\ task --body \"Buy Milk\""))
-  (assert-equal '("create" "task") (split-params #?"  create\t task  \n")))
+  (assert-equal '("create" "task") (split-params #?"  create\t task  \n"))
+  (assert-equal '("list" "--tag" "#shopping") (split-params "list --tag \"#shopping\"")))
 
 (define-test create-task
   (assert-eq nil (select-one task :body "Buy Milk"))

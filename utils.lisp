@@ -87,6 +87,7 @@
     (cl-ppcre:split "\0"
       (aand param-str
             (cl-ppcre:regex-replace-all #?/\"(.+?)\s+([^\"]+?)\"/ it #?/\1\\ \2/)
+            (cl-ppcre:regex-replace-all "\"" it "")
             (cl-ppcre:regex-replace-all #?/(?<!\\)\s/ it "\0")
             (cl-ppcre:regex-replace-all #?/\\(\s)/ it "\\1")))))
 
