@@ -39,13 +39,11 @@
            (if (eq t (car rule)) `(t ,@(cdr rule))
              (destructuring-bind (rule-symb vars &body body) rule
                (let* ((rule-list (split-rules rule-symb))
-                      (rest-argv `(nthcdr ,(length rule-list) ,target-rule))
-                      (arghash (gensym)))
+                      (rest-argv `(nthcdr ,(length rule-list) ,target-rule)))
                  `((rule-match-p ',rule-list ,target-rule)
-                   (let* ((,arghash (argv->hash ,rest-argv))
-                          ,@(mapcar
-                             #'(lambda (v)
-                                 `(,v (gethash ',v ,arghash))) vars))
+                   (let (,@(loop for v in vars
+                                 for i = 0 then (1+ i)
+                                 collect (list v `(let ((arg (nth ,i ,rest-argv))) (unless (string= "nil" arg) arg)))))
                      ,@body))))))
        rules)))
 
