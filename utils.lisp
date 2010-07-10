@@ -10,30 +10,6 @@
         ((null (cdr args)) (car args))
         (t `(aif ,(car args) (aand ,@(cdr args))))))
 
-(defun concat (&rest strs)
-  (apply #'concatenate 'string strs))
-
-(defun concat-symbol-pkg (pkg &rest args)
-  (declare (dynamic-extent args))
-  (flet ((stringify (arg)
-           (etypecase arg
-             (string
-              (string-upcase arg))
-             (symbol
-              (symbol-name arg)))))
-    (let ((str (apply #'concat (mapcar #'stringify args))))
-      (nth-value 0 (intern str (if pkg pkg *package*))))))
-
-(defun concat-symbol (&rest args)
-  (apply #'concat-symbol-pkg nil args))
-
-(defun mkstr (&rest args)
-  (with-output-to-string (s)
-    (dolist (a args) (princ a s))))
-
-(defun symb (&rest args)
-  (values (intern (apply #'mkstr args))))
-
 (defun group (source n)
   (if (not (listp source)) (error "group: not list"))
   (if (zerop n) (error "zero length"))
@@ -47,31 +23,88 @@
                    (cons source acc))))))
     (if source (rec source nil) nil)))
 
-(defun flatten (x)
-  (labels ((rec (x acc)
-             (cond ((null x) acc)
-                   ((atom x) (cons x acc))
-                   (t (rec
-                        (car x)
-                        (rec (cdr x) acc))))))
-    (rec x nil)))
+(eval-when (:compile-toplevel)
+  (defun mkstr (&rest args)
+    (with-output-to-string (s)
+      (dolist (a args) (princ a s))))
 
-(defun take (num list)
-  (loop repeat num for x in list collect x))
+  (defun symb (&rest args)
+    (values (intern (apply #'mkstr args))))
 
-(defun take-until (pred list)
-  (labels ((rec (pred list acc)
-                (if (or (null (car list)) (funcall pred (car list)))
-                    (values acc list)
-                  (rec pred (cdr list) (nconc acc (list (car list)))))))
-    (rec pred list nil)))
+  (defun flatten (x)
+    (labels ((rec (x acc)
+               (cond ((null x) acc)
+                     ((atom x) (cons x acc))
+                     (t (rec
+                         (car x)
+                         (rec (cdr x) acc))))))
+      (rec x nil)))
 
-(defun split-with (sep string)
-  (loop for i = 0 then (1+ j)
-        as j = (position sep string :start i)
-        collect (subseq string i j)
-        while j))
+  (defun g!-symbol-p (s)
+    (and (symbolp s)
+         (> (length (symbol-name s)) 2)
+         (string= (symbol-name s)
+                  "G!"
+                  :start1 0
+                  :end1 2)))
 
+  (defun o!-symbol-p (s)
+    (and (symbolp s)
+         (> (length (symbol-name s)) 2)
+         (string= (symbol-name s)
+                  "O!"
+                  :start1 0
+                  :end1 2)))
+
+  (defun o!-symbol-to-g!-symbol (s)
+    (symb "G!"
+          (subseq (symbol-name s) 2)))
+
+  (defun |#`-reader| (stream sub-char numarg)
+    (declare (ignore sub-char))
+    (unless numarg (setq numarg 1))
+    `(lambda ,(loop for i from 1 to numarg
+                 collect (symb 'a i))
+       ,(funcall
+         (get-macro-character #\`) stream nil)))
+
+  (set-dispatch-macro-character #\# #\` #'|#`-reader|))
+
+(defmacro defmacro/g! (name args &body body)
+  (let ((symbs (remove-duplicates
+                (remove-if-not #'g!-symbol-p
+                               (flatten body)))))
+    `(defmacro ,name ,args
+       (let ,(mapcar
+              (lambda (s)
+                `(,s (gensym ,(subseq
+                               (symbol-name s)
+                               2))))
+              symbs)
+         ,@body))))
+
+(defmacro defmacro! (name args &body body)
+  (let* ((os (remove-if-not #'o!-symbol-p args))
+         (gs (mapcar #'o!-symbol-to-g!-symbol os)))
+    `(defmacro/g! ,name ,args
+       `(let ,(mapcar #'list (list ,@gs) (list ,@os))
+          ,(progn ,@body)))))
+
+(defmacro! dlambda (&rest ds)
+  `(lambda (&rest ,g!args)
+     (case (car ,g!args)
+       ,@(mapcar
+          (lambda (d)
+            `(,(if (eq t (car d))
+                   t
+                   (list (car d)))
+               (apply (lambda ,@(cdr d))
+                      ,(if (eq t (car d))
+                           g!args
+                           `(cdr ,g!args)))))
+          ds))))
+
+;; TODO: refactor
 (defun str->date (str)
   (cl-ppcre:register-groups-bind ((#'parse-integer year) (#'parse-integer month) (#'parse-integer day) (#'parse-integer hour) (#'parse-integer minute) (#'parse-integer second))
       ("(\\d{4})-(\\d{1,2})-(\\d{1,2})(?: (\\d{1,2}):(\\d{1,2}):(\\d{1,2}))?" str)
@@ -91,10 +124,6 @@
             (cl-ppcre:regex-replace-all #?/(?<!\\)\s/ it #?"\0")
             (cl-ppcre:regex-replace-all #?/\\(\s)/ it "\\1")))))
 
-(defmacro set-slot (obj &body body)
-  `(setf ,@(loop for (slot val) in (group body 2)
-              append `((slot-value ,obj ,slot) ,val))))
-
 ;;==================
 ;; For debug
 ;;==================
@@ -103,3 +132,17 @@
 
 (defmacro print-form-and-results (form)
   `(format t "~&~A --> ~S~%" (write-to-string ',form) ,form))
+
+(defmacro dis (args &body body)
+  `(disassemble
+    (compile nil
+      (lambda ,(mapcar (lambda (a)
+                         (if (consp a)
+                             (cadr a)
+                             a))
+                       args)
+        (declare
+         ,@(mapcar
+            #`(type ,(car a1) ,(cadr a1))
+            (remove-if-not #'consp args)))
+        ,@body))))

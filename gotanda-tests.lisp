@@ -21,7 +21,7 @@
 (in-package :got)
 (loop for p in '(define-test run-tests
                  assert-true assert-eq assert-equal assert-equality)
-   do (shadowing-import (concat-symbol-pkg :lisp-unit p)))
+   do (shadowing-import (intern (symbol-name p) :lisp-unit)))
 
 ;;====================
 ;; Test Start
@@ -31,11 +31,10 @@
   `(assert-equality #'clsql:time=
                     ,form
                     (clsql:make-time
-                     ,@(flatten
-                        (loop for arg in args
+                     ,@(loop for arg in args
                            for label in '(:year :month :day :hour :minute :second)
                            until (null arg)
-                           collect (list label arg))))))
+                           append (list label arg)))))
 
 (define-test str->date
   (assert-time (str->date "2003-04-07") 2003 4 7)

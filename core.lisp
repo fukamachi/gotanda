@@ -26,10 +26,9 @@
 
 (defun update-task (task &key body deadline)
   (let ((tags (mapcar #'get-tag (parse-tags body))))
-    (set-slot task
-      'body body
-      'deadline (str->date deadline)
-      'tags (mapcar #'get-id tags))
+    (setf (slot-value task 'body) body)
+    (setf (slot-value task 'deadline) (str->date deadline))
+    (setf (slot-value task 'tags) (mapcar #'get-id tags))
     (clsql:update-records-from-instance task)
     task))
 
@@ -42,14 +41,14 @@
 (defmacro filter-> (target &rest by)
   `(aand ,target
          ,@(mapcar #'(lambda (b)
-                       `(if ,b (,(concat-symbol 'filter-by- b) ,b it) it)) by)))
+                       `(if ,b (,(symb 'filter-by- b) ,b it) it)) by)))
 
 (defun filter-by-tag (tag tasks)
   (let ((tag-id (get-tag-id tag)))
     (remove-if-not #'(lambda (task) (member tag-id (get-tags task))) tasks)))
 
 (defun filter-by-deadline (deadline tasks)
-  (let ((compare-fn (concat-symbol-pkg :clsql 'time (car deadline))))
+  (let ((compare-fn (intern (mkstr 'time (car deadline)) :clsql)))
     (remove-if-not #'(lambda (task)
                        (and (get-deadline task)
                             (funcall compare-fn

@@ -11,57 +11,28 @@
 
 (in-package :got)
 
-(defun rule-match-p (rule target)
-  (equal rule (take (length rule) target)))
+(setf (symbol-function 'dispatch)
+      (dlambda
+       (:create (&optional body deadline)
+                (let ((task (create-task :body body :deadline deadline)))
+                  (format t "New Task: ~a~%" (get-body task))))
+       (:list (&optional tag deadline)
+              (dolist
+                  (task
+                    (list-task :tag tag
+                               :deadline (and deadline
+                                              (destructuring-bind (compare-fn datestr)
+                                                  (cl-ppcre:split #\Space deadline)
+                                                (list (intern compare-fn) (str->date datestr))))))
+                (format t "~a: ~a~%" (get-id task) (get-body task))))
+       (:edit (&optional index body deadline)
+              (edit-task index :body body :deadline deadline))
+       (t () (format t "Undefined action~%"))))
 
-(defun split-rules (rule)
-  (split-with #\/ (string-downcase rule)))
-
-(defun argv-option-p (arg)
-  (and (stringp arg)
-       (not (string= arg (string-left-trim "--" arg)))))
-
-(defun option->symbol (opt)
-  (intern (string-upcase (subseq opt 2))))
-
-(defun argv->hash (argv &optional (hash (make-hash-table)))
-  (if (null argv) hash
-      (destructuring-bind (key &rest rest) argv
-        (multiple-value-bind (value-list rest2) (take-until #'argv-option-p rest)
-          (setf (gethash (option->symbol key) hash)
-                (if (cdr value-list) value-list (car value-list)))
-          (argv->hash rest2 hash)))))
-
-(defmacro dispatch (target-rule &rest rules)
-  `(cond
-    ,@(mapcar
-       #'(lambda (rule)
-           (if (eq t (car rule)) `(t ,@(cdr rule))
-             (destructuring-bind (rule-symb vars &body body) rule
-               (let* ((rule-list (split-rules rule-symb))
-                      (rest-argv `(nthcdr ,(length rule-list) ,target-rule)))
-                 `((rule-match-p ',rule-list ,target-rule)
-                   (let (,@(loop for v in vars
-                                 for i = 0 then (1+ i)
-                                 collect (list v `(let ((arg (nth ,i ,rest-argv))) (unless (string= "nil" arg) arg)))))
-                     ,@body))))))
-       rules)))
-
-(defun run-dispatch (input-rule)
-  (dispatch input-rule
-    (create (body deadline)
-            (let ((task (create-task :body body :deadline deadline)))
-              (format t "New Task: ~a~%" (get-body task))))
-    (list (tag deadline)
-          (dolist (task (list-task :tag tag
-                                   :deadline (and deadline
-                                                  (destructuring-bind (compare-fn datestr)
-                                                      (split-with #\Space deadline)
-                                                    (list (intern compare-fn) (str->date datestr))))))
-            (format t "~a: ~a~%" (get-id task) (get-body task))))
-    (edit (index body deadline)
-          (edit-task index :body body :deadline deadline))
-    (t (format t "Undefined action~%"))))
+(defun run-dispatch (args)
+  (apply #'dispatch
+         (intern (string-upcase (car args)) :KEYWORD)
+         (cdr args)))
 
 (format *terminal-io* "Done.~%")
 
