@@ -1,5 +1,7 @@
 (in-package :got)
 
+(enable-read-macros)
+
 (defun build-where (&rest args)
   (apply #'clsql:sql-operation 'and
          (loop for (k v) in (group args 2)
@@ -40,12 +42,11 @@
 
 (defmacro filter-> (target &rest by)
   `(aand ,target
-         ,@(mapcar #'(lambda (b)
-                       `(if ,b (,(symb 'filter-by- b) ,b it) it)) by)))
+         ,@(mapcar #`(if ,$1 (,(symb 'filter-by- $1) ,$1 it) it) by)))
 
 (defun filter-by-tag (tag tasks)
   (let ((tag-id (get-tag-id tag)))
-    (remove-if-not #'(lambda (task) (member tag-id (get-tags task))) tasks)))
+    (remove-if-not #^(member tag-id (get-tags $1)) tasks)))
 
 (defun filter-by-deadline (deadline tasks)
   (let ((compare-fn (intern (mkstr 'time (car deadline)) :clsql)))

@@ -23,7 +23,7 @@
                    (cons source acc))))))
     (if source (rec source nil) nil)))
 
-(eval-when (:compile-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defun mkstr (&rest args)
     (with-output-to-string (s)
       (dolist (a args) (princ a s))))
@@ -64,11 +64,22 @@
     (declare (ignore sub-char))
     (unless numarg (setq numarg 1))
     `(lambda ,(loop for i from 1 to numarg
-                 collect (symb 'a i))
+                 collect (symb '$ i))
        ,(funcall
          (get-macro-character #\`) stream nil)))
 
-  (set-dispatch-macro-character #\# #\` #'|#`-reader|))
+  (defun |#^-reader| (stream sub-char numarg)
+    (declare (ignore sub-char))
+    (unless numarg (setq numarg 1))
+    `(lambda ,(loop for i from 1 to numarg collect (symb '$ i))
+       ,(read stream t nil t))))
+
+(defmacro enable-read-macros ()
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (set-dispatch-macro-character #\# #\` #'|#`-reader|)
+     (set-dispatch-macro-character #\# #\^ #'|#^-reader|)))
+
+(enable-read-macros)
 
 (defmacro defmacro/g! (name args &body body)
   (let ((symbs (remove-duplicates
@@ -116,7 +127,7 @@
   (read-line *query-io* nil))
 
 (defun split-params (param-str)
-  (remove-if #'(lambda (s) (string= "" s))
+  (remove-if #^(string= "" $1)
     (cl-ppcre:split #?"\0"
       (aand param-str
             (cl-ppcre:regex-replace-all #?/\"(.+?)\s+([^\"]+?)\"/ it #?/\1\\ \2/)
@@ -143,6 +154,6 @@
                        args)
         (declare
          ,@(mapcar
-            #`(type ,(car a1) ,(cadr a1))
+            #`(type ,(car $1) ,(cadr $1))
             (remove-if-not #'consp args)))
         ,@body))))
