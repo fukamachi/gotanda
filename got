@@ -27,7 +27,7 @@
                 (format t "~a: ~a~%" (get-id task) (get-body task))))
        (:edit (&optional index body deadline)
               (edit-task index :body body :deadline deadline))
-       (t () (format t "Undefined action~%"))))
+       (t (&rest args) (declare (ignore args)) (format t "Undefined action~%"))))
 
 (defun run-dispatch (args)
   (apply #'dispatch
