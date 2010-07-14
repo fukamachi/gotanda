@@ -19,29 +19,38 @@
 
 (setf (symbol-function 'dispatch)
       (alet (list-items)
-            (dlambda
-             (:create (&optional body deadline)
-                      (let ((task (create-task :body body :deadline deadline)))
-                        (format t "New Task: ~a~%" (get-body task))))
-             (:list (&optional tag deadline)
-                    (setf list-items
-                          (list-task :tag tag
-                                     :deadline (and deadline
-                                                    (destructuring-bind (compare-fn datestr)
-                                                        (cl-ppcre:split #\Space deadline)
-                                                      (list (intern compare-fn) (str->date datestr))))))
-                    (format t "~{~{~a: ~a~}~%~}" (mapcar #`(,(get-id $1) ,(get-body $1)) list-items)))
-             (:edit (index &optional body deadline)
-                    (edit-task index :body body :deadline deadline))
-             (:action-for (n)
-                          (destructuring-bind (action &rest args)
-                              (or (get-action) (funcall this :action-for n))
-                            (let ((action-kwd (make-keyword action)))
-                              (if (member action-kwd '(:edit))
-                                  (apply this action-kwd n args)
-                                  (funcall this :error "Invalid action~%")))))
-             (:error (form &rest args) (format t form args))
-             (t (&rest args) (format t "Undefined action: ~a~%" (car args))))))
+            (macrolet ((rec (&rest args) `(if (listp ,(car (last args)))
+                                              (apply this ,@args)
+                                              (funcall this ,@args)))
+                       (get-item (idx) `(nth (- (parse-integer ,idx) 1) list-items)))
+              (dlambda
+               (:create (&optional body deadline)
+                        (let ((task (create-task :body body :deadline deadline)))
+                          (format t "New Task: ~a~%" (get-body task))))
+               (:list (&optional tag deadline)
+                      (setf list-items
+                            (list-task :tag tag
+                                       :deadline (and deadline
+                                                      (destructuring-bind (compare-fn datestr)
+                                                          (cl-ppcre:split #\Space deadline)
+                                                        (list (intern compare-fn) (str->date datestr))))))
+                      (format t "~{~{~a: ~a ~:[~;[~:*~a]~]~}~%~}"
+                              (loop for task in list-items
+                                 for i = 1 then (1+ i)
+                                 collect `(,i ,(get-body task) ,(get-deadline task)))))
+               (:edit (index &optional body deadline)
+                      (edit-task (get-item index) :body body :deadline deadline))
+               (:delete (index)
+                        (clsql:delete-instance-records (get-item index)))
+               (:action-for (n)
+                            (destructuring-bind (action &rest args)
+                                (or (get-action) (rec :action-for n))
+                              (let ((action-kwd (make-keyword action)))
+                                (if (member action-kwd '(:edit :delete))
+                                    (rec action-kwd n args)
+                                    (rec :error "Invalid action~%")))))
+               (:error (form &rest args) (format t form args))
+               (t (&rest args) (format t "Undefined action: ~a~%" (car args)))))))
 
 (defun run-dispatch (args)
   (if (#~m/^\d+$/ (car args)) (push :action-for args))

@@ -13,6 +13,7 @@
    (body
     :accessor get-body
     :type (string 1400)
+    :initform ""
     :initarg :body)
    (deadline
     :accessor get-deadline
