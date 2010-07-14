@@ -12,7 +12,6 @@
     :accessor get-id)
    (body
     :accessor get-body
-    :db-constraints (:not-null)
     :type (string 1400)
     :initarg :body)
    (deadline

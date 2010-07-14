@@ -11,28 +11,41 @@
 
 (in-package :got)
 
+(defun make-keyword (symb)
+  (values (intern (string-upcase symb) :KEYWORD)))
+
+(defun get-action ()
+  (split-params (prompt-read "Which action?>")))
+
 (setf (symbol-function 'dispatch)
-      (dlambda
-       (:create (&optional body deadline)
-                (let ((task (create-task :body body :deadline deadline)))
-                  (format t "New Task: ~a~%" (get-body task))))
-       (:list (&optional tag deadline)
-              (dolist
-                  (task
-                    (list-task :tag tag
-                               :deadline (and deadline
-                                              (destructuring-bind (compare-fn datestr)
-                                                  (cl-ppcre:split #\Space deadline)
-                                                (list (intern compare-fn) (str->date datestr))))))
-                (format t "~a: ~a~%" (get-id task) (get-body task))))
-       (:edit (&optional index body deadline)
-              (edit-task index :body body :deadline deadline))
-       (t (&rest args) (declare (ignore args)) (format t "Undefined action~%"))))
+      (alet (list-items)
+            (dlambda
+             (:create (&optional body deadline)
+                      (let ((task (create-task :body body :deadline deadline)))
+                        (format t "New Task: ~a~%" (get-body task))))
+             (:list (&optional tag deadline)
+                    (setf list-items
+                          (list-task :tag tag
+                                     :deadline (and deadline
+                                                    (destructuring-bind (compare-fn datestr)
+                                                        (cl-ppcre:split #\Space deadline)
+                                                      (list (intern compare-fn) (str->date datestr))))))
+                    (format t "~{~{~a: ~a~}~%~}" (mapcar #`(,(get-id $1) ,(get-body $1)) list-items)))
+             (:edit (index &optional body deadline)
+                    (edit-task index :body body :deadline deadline))
+             (:action-for (n)
+                          (destructuring-bind (action &rest args)
+                              (or (get-action) (funcall this :action-for n))
+                            (let ((action-kwd (make-keyword action)))
+                              (if (member action-kwd '(:edit))
+                                  (apply this action-kwd n args)
+                                  (funcall this :error "Invalid action~%")))))
+             (:error (form &rest args) (format t form args))
+             (t (&rest args) (format t "Undefined action: ~a~%" (car args))))))
 
 (defun run-dispatch (args)
-  (apply #'dispatch
-         (intern (string-upcase (car args)) :KEYWORD)
-         (cdr args)))
+  (if (#~m/^\d+$/ (car args)) (push :action-for args))
+  (apply #'dispatch (make-keyword (car args)) (cdr args)))
 
 (format *terminal-io* "Done.~%")
 

@@ -60,6 +60,26 @@
     (symb "G!"
           (subseq (symbol-name s) 2)))
 
+  (defmacro defmacro/g! (name args &body body)
+    (let ((symbs (remove-duplicates
+                  (remove-if-not #'g!-symbol-p
+                                 (flatten body)))))
+      `(defmacro ,name ,args
+         (let ,(mapcar
+                (lambda (s)
+                  `(,s (gensym ,(subseq
+                                 (symbol-name s)
+                                 2))))
+                symbs)
+           ,@body))))
+
+  (defmacro defmacro! (name args &body body)
+    (let* ((os (remove-if-not #'o!-symbol-p args))
+           (gs (mapcar #'o!-symbol-to-g!-symbol os)))
+      `(defmacro/g! ,name ,args
+         `(let ,(mapcar #'list (list ,@gs) (list ,@os))
+            ,(progn ,@body)))))
+
   (defun |#`-reader| (stream sub-char numarg)
     (declare (ignore sub-char))
     (unless numarg (setq numarg 1))
@@ -72,34 +92,54 @@
     (declare (ignore sub-char))
     (unless numarg (setq numarg 1))
     `(lambda ,(loop for i from 1 to numarg collect (symb '$ i))
-       ,(read stream t nil t))))
+       ,(read stream t nil t)))
+
+  (defun segment-reader (stream ch n)
+    (if (> n 0)
+        (let ((chars))
+          (do ((curr (read-char stream)
+                     (read-char stream)))
+              ((char= ch curr))
+            (push curr chars))
+          (cons (coerce (nreverse chars) 'string)
+                (segment-reader stream ch (- n 1))))))
+
+  (defmacro! match-mode-ppcre-lambda-form (o!args)
+    ``(lambda (,',g!str)
+        (cl-ppcre:scan
+         ,(car ,g!args)
+         ,',g!str)))
+
+  (defmacro! subst-mode-ppcre-lambda-form (o!args)
+    ``(lambda (,',g!str)
+        (cl-ppcre:regex-replace-all
+         ,(car ,g!args)
+         ,',g!str
+         ,(cadr ,g!args))))
+
+  (defun |#~-reader| (stream sub-char numarg)
+    (declare (ignore sub-char numarg))
+    (let ((mode-char (read-char stream)))
+      (cond
+        ((char= mode-char #\m)
+         (match-mode-ppcre-lambda-form
+          (segment-reader stream
+                          (read-char stream)
+                          1)))
+        ((char= mode-char #\s)
+         (subst-mode-ppcre-lambda-form
+          (segment-reader stream
+                          (read-char stream)
+                          2)))
+        (t (error "Unknown #~~ mode character"))))))
 
 (defmacro enable-read-macros ()
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (set-dispatch-macro-character #\# #\` #'|#`-reader|)
-     (set-dispatch-macro-character #\# #\^ #'|#^-reader|)))
+     (set-dispatch-macro-character #\# #\^ #'|#^-reader|)
+     (set-dispatch-macro-character #\# #\~ #'|#~-reader|)))
 
 (enable-read-macros)
-
-(defmacro defmacro/g! (name args &body body)
-  (let ((symbs (remove-duplicates
-                (remove-if-not #'g!-symbol-p
-                               (flatten body)))))
-    `(defmacro ,name ,args
-       (let ,(mapcar
-              (lambda (s)
-                `(,s (gensym ,(subseq
-                               (symbol-name s)
-                               2))))
-              symbs)
-         ,@body))))
-
-(defmacro defmacro! (name args &body body)
-  (let* ((os (remove-if-not #'o!-symbol-p args))
-         (gs (mapcar #'o!-symbol-to-g!-symbol os)))
-    `(defmacro/g! ,name ,args
-       `(let ,(mapcar #'list (list ,@gs) (list ,@os))
-          ,(progn ,@body)))))
 
 (defmacro! dlambda (&rest ds)
   `(lambda (&rest ,g!args)
@@ -114,6 +154,13 @@
                            g!args
                            `(cdr ,g!args)))))
           ds))))
+
+(defmacro alet (letargs &rest body)
+  `(let ((this) ,@letargs)
+     (setq this ,@(last body))
+     ,@(butlast body)
+     (lambda (&rest params)
+       (apply this params))))
 
 ;; TODO: refactor
 (defun str->date (str)
@@ -130,10 +177,10 @@
   (remove-if #^(string= "" $1)
     (cl-ppcre:split #?"\0"
       (aand param-str
-            (cl-ppcre:regex-replace-all #?/\"(.+?)\s+([^\"]+?)\"/ it #?/\1\\ \2/)
-            (cl-ppcre:regex-replace-all "\"" it "")
+            (#~s/\"(.+?)\s+([^\"]+?)\"/\1\\ \2/ it)
+            (#~s/\"// it)
             (cl-ppcre:regex-replace-all #?/(?<!\\)\s/ it #?"\0")
-            (cl-ppcre:regex-replace-all #?/\\(\s)/ it "\\1")))))
+            (#~s/\\(\s)/\1/ it)))))
 
 ;;==================
 ;; For debug
