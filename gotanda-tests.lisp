@@ -43,8 +43,8 @@
   (assert-time (str->date "1987-10-3 18:11:29") 1987 10 3 18 11 29))
 
 (define-test split-params
-  (assert-equal '("create" "task" "--body" "Buy Milk")
-                (split-params "create task --body \"Buy Milk\""))
+  (assert-equal '("create" "task" "--body" "Buy Milk #shopping")
+                (split-params "create task --body \"Buy Milk #shopping\""))
   (assert-equal '("create task" "--body" "Buy Milk")
                 (split-params "create\\ task --body \"Buy Milk\""))
   (assert-equal '("create" "task") (split-params #?"  create\t task  \n"))
@@ -52,14 +52,14 @@
   (assert-equal '("list" "nil" "< 2010-04-07") (split-params "list nil \"< 2010-04-07\"")))
 
 (define-test create-task
-  (assert-eq nil (select-one task :body "Buy Milk"))
-  (let ((task (create-task :body "Buy Milk")))
+  (assert-eq nil (select-one task :body "Buy Milk #shopping"))
+  (let ((task (create-task :body "Buy Milk #shopping")))
     (assert-true task)
-    (assert-equal "Buy Milk" (get-body task)))
-  (let ((task (select-one task :body "Buy Milk")))
+    (assert-equal "Buy Milk #shopping" (get-body task)))
+  (let ((task (select-one task :body "Buy Milk #shopping")))
     (assert-true task)
     (assert-equal 1 (get-id task))
-    (assert-equal "Buy Milk" (get-body task))))
+    (assert-equal "Buy Milk #shopping" (get-body task))))
 
 (define-test list-task
   (create-task :body "Produce Astro Boy #invent" :deadline "2003-04-07")

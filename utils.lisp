@@ -177,7 +177,7 @@
   (remove-if #^(string= "" $1)
     (cl-ppcre:split #?"\0"
       (aand param-str
-            (#~s/\"(.+?)\s+([^\"]+?)\"/\1\\ \2/ it)
+            (cl-ppcre:regex-replace-all #?/\"(?:[^\"\\]|\\.)*\"/ it #~s/ /\\ / :simple-calls t)
             (#~s/\"// it)
             (cl-ppcre:regex-replace-all #?/(?<!\\)\s/ it #?"\0")
             (#~s/\\(\s)/\1/ it)))))
