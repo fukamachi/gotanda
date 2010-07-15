@@ -72,8 +72,8 @@
 
 (define-action action-for (n)
   (destructuring-bind (action &rest args)
-      (or (split-params (prompt-read "What action?>"))
-          (dispatch :do :action-for n))
+      (loop for params = (split-params (prompt-read "What action?>"))
+           if params return params)
     (let ((action-kwd (make-keyword action)))
       (if (member action-kwd '(:edit :delete))
           (dispatch :do action-kwd n args)
