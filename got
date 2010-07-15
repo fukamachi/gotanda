@@ -12,65 +12,79 @@
 
 (in-package :got)
 
+(defvar *list-items* nil)
+
 (defun make-keyword (symb)
   (values (intern (string-upcase symb) :KEYWORD)))
 
 (setf (symbol-function 'dispatch)
-      (alet (list-items)
-            (macrolet ((rec (&rest args) `(if (listp ,(car (last args)))
-                                              (apply this ,@args)
-                                              (funcall this ,@args)))
-                       (get-item (idx)
-                         `(nth (- (parse-integer ,idx) 1) list-items)))
-              (dlambda
-               (:create (&optional body deadline)
-                        (let ((task (create-task
-                                     :body (or body (prompt-read "Body?>"))
-                                     :deadline (or deadline (prompt-read "Deadline?>")))))
-                          (format t "New Task: ~a~%" (get-body task))))
-               (:list (&optional tag deadline)
-                      (setf list-items
-                            (list-task :tag tag
-                                       :deadline (and deadline
-                                                      (destructuring-bind (compare-fn datestr)
-                                                          (cl-ppcre:split #\Space deadline)
-                                                        (list (intern compare-fn) (str->date datestr))))))
-                      (format t "~{~{~a: ~a ~@[[~a]~]~}~%~}"
-                              (loop for task in list-items
-                                 for i = 1 then (1+ i)
-                                 collect `(,(color:style (:gray) i)
-                                            ,(color:style (:cyan) (get-body task))
-                                            ,(aand (get-deadline task)
-                                                   (color:style (:gray) it))))))
-               (:edit (index &optional body deadline)
-                      (let ((task (get-item index)))
-                        (case task
-                          ((NIL) (rec :error "Out of range."))
-                          ((DELETED) (rec :error "It is already deleted."))
-                          (t (edit-task task
-                                        :body (or body (prompt-read "Body?>"))
-                                        :deadline (or deadline (prompt-read "Deadline?>")))))))
-               (:delete (index)
-                        (let ((task (get-item index)))
-                          (case task
-                            ((NIL) (rec :error "Out of range."))
-                            ((DELETED) (rec :error "It is already deleted."))
-                            (t (clsql:delete-instance-records task)
-                               (setf (get-item index) 'DELETED)))))
-               (:action-for (n)
-                            (destructuring-bind (action &rest args)
-                                (or (split-params (prompt-read "What action?>"))
-                                    (rec :action-for n))
-                              (let ((action-kwd (make-keyword action)))
-                                (if (member action-kwd '(:edit :delete))
-                                    (rec action-kwd n args)
-                                    (rec :error "Invalid action")))))
-               (:error (form &rest args) (format t (concatenate 'string form "~%") args))
-               (t (&rest args) (format t "Undefined action: ~a~%" (car args)))))))
+      (alet ((actions (make-hash-table)))
+            (dlambda
+             (:define (name def)
+                 (setf (gethash name actions) def))
+             (:do (name &rest args)
+                  (aif (gethash name actions)
+                       (apply it args)
+                       (funcall this :error "Undefined action: ~a~%" name))))))
+
+(defmacro define-action (name args &body body)
+  `(dispatch :define (make-keyword ',name) (lambda ,args ,@body)))
+
+(define-action list (&optional tag deadline)
+  (setf *list-items*
+        (list-task :tag tag
+                   :deadline (and deadline
+                                  (destructuring-bind (compare-fn datestr)
+                                      (cl-ppcre:split #\Space deadline)
+                                    (list (intern compare-fn) (str->date datestr))))))
+  (format t "~{~{~a: ~a ~@[[~a]~]~}~%~}"
+          (loop for task in *list-items*
+             for i = 1 then (1+ i)
+             collect `(,(color:style (:gray) i)
+                        ,(color:style (:cyan) (get-body task))
+                        ,(aand (get-deadline task)
+                               (color:style (:gray) it))))))
+
+(define-action create (&optional body deadline)
+  (let ((task (create-task
+               :body (or body (prompt-read "Body?>"))
+               :deadline (or deadline (prompt-read "Deadline?>")))))
+    (format t "New Task: ~a~%" (get-body task))))
+
+(define-action edit (index-string &optional body deadline)
+  (let* ((idx (- (parse-integer index-string) 1))
+         (task (nth idx *list-items*)))
+    (case task
+      ((NIL) (dispatch :do :error "Out of range."))
+      ((DELETED) (dispatch :do :error "It is already deleted."))
+      (t (edit-task task
+                    :body (or body (prompt-read "Body?>"))
+                    :deadline (or deadline (prompt-read "Deadline?>")))))))
+
+(define-action delete (index-string)
+  (let* ((idx (- (parse-integer index-string) 1))
+         (task (nth idx *list-items*)))
+    (case task
+      ((NIL) (dispatch :do :error "Out of range."))
+      ((DELETED) (dispatch :do :error "It is already deleted."))
+      (t (clsql:delete-instance-records task)
+         (setf (nth idx *list-items*) 'DELETED)))))
+
+(define-action action-for (n)
+  (destructuring-bind (action &rest args)
+      (or (split-params (prompt-read "What action?>"))
+          (dispatch :do :action-for n))
+    (let ((action-kwd (make-keyword action)))
+      (if (member action-kwd '(:edit :delete))
+          (dispatch :do action-kwd n args)
+          (dispatch :do :error "Invalid action")))))
+
+(define-action error (form &rest args)
+  (format t (format nil "~a~%" form) args))
 
 (defun run-dispatch (args)
   (if (#~m/^\d+$/ (car args)) (push :action-for args))
-  (apply #'dispatch (make-keyword (car args)) (cdr args)))
+  (apply #'dispatch :do (make-keyword (car args)) (cdr args)))
 
 (format *terminal-io* "Done.~%")
 
