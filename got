@@ -76,5 +76,6 @@
 
 (loop for input = (prompt-read ">")
      with clsql:*default-caching* = nil
-     until (zerop (length input))
+     until (eq nil input)
+     unless (string= "" input)
      do (run-dispatch (split-params input)))
