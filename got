@@ -7,7 +7,8 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (let ((*standard-output* (make-broadcast-stream)))
     (require 'asdf)
-    (require 'gotanda)))
+    (require 'gotanda)
+    (load "color")))
 
 (in-package :got)
 
@@ -34,10 +35,13 @@
                                                       (destructuring-bind (compare-fn datestr)
                                                           (cl-ppcre:split #\Space deadline)
                                                         (list (intern compare-fn) (str->date datestr))))))
-                      (format t "~{~{~a: ~a ~:[~;[~:*~a]~]~}~%~}"
+                      (format t "~{~{~a: ~a ~:[~;~:*[~a]~]~}~%~}"
                               (loop for task in list-items
                                  for i = 1 then (1+ i)
-                                 collect `(,i ,(get-body task) ,(get-deadline task)))))
+                                 collect `(,(color:style (:gray) i)
+                                            ,(color:style (:cyan) (get-body task))
+                                            ,(aand (get-deadline task)
+                                                   (color:style (:gray) it))))))
                (:edit (index &optional body deadline)
                       (edit-task (get-item index) :body body :deadline deadline))
                (:delete (index)
