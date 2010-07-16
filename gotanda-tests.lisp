@@ -64,8 +64,8 @@
 (define-test list-task
   (create-task :body "Produce Astro Boy #invent" :deadline "2003-04-07")
   (assert-true (list-task :tag "#invent"))
-  (assert-true (list-task :deadline (list '< (clsql:get-time))))
-  (assert-true (list-task :deadline (list '> (clsql:make-time)))))
+  (assert-true (list-task :tag t :deadline (list '< (clsql:get-time))))
+  (assert-true (list-task :tag t :deadline (list '> (clsql:make-time)))))
 
 ;;====================
 ;; Test End
