@@ -25,7 +25,7 @@
              (:do (name &rest args)
                   (aif (gethash name actions)
                        (apply it args)
-                       (funcall this :error "Undefined action: ~a~%" name))))))
+                       (funcall this :do :error "Undefined action: ~a" name))))))
 
 (defmacro define-action (name args &body body)
   `(dispatch :define (make-keyword ',name) (lambda ,args ,@body)))
@@ -83,7 +83,7 @@
           (dispatch :do :error "Invalid action")))))
 
 (define-action error (form &rest args)
-  (format t (format nil "~a~%" form) args))
+  (apply #'format t (concatenate 'string form "~%") args))
 
 (defun run-dispatch (args)
   (if (#~m/^\d+$/ (car args)) (push :action-for args))
