@@ -16,12 +16,13 @@
    (cl-ppcre:all-matches-as-strings "(?:(?<=\\W)|(?<=^))#\\w+" body)
    :test #'string=))
 
-(defun create-tag-if-not-exists (name)
-  (aif (select-one tag :name name)
-       it
-       (progn
-         (clsql:insert-records :into 'tag :av-pairs `((name ,name)))
-         (create-tag-if-not-exists name))))
+(defun create-tag-if-not-exists (name-dirty)
+  (let ((name (string-downcase name-dirty)))
+    (aif (select-one tag :name name)
+         it
+         (progn
+           (clsql:insert-records :into 'tag :av-pairs `((name ,name)))
+           (select-one tag :name name)))))
 
 (defun get-tag-id (name)
   (car (clsql:select 'id :from 'tag :where (clsql:sql-operation '= 'name name) :flatp t)))
