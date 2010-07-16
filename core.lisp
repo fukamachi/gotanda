@@ -44,22 +44,24 @@
 (defun edit-task (task &key body deadline)
   (update-task task :body body :deadline deadline))
 
-(defmacro filter-> (target &rest by)
-  `(aand ,target
-         ,@(mapcar #`(if ,$1 (,(symb 'filter-by- $1) ,$1 it) it) by)))
-
 (defun filter-by-tag (tag tasks)
-  (let ((tag-id (get-tag-id tag)))
-    (remove-if-not #^(member tag-id (get-tags $1)) tasks)))
+  (cond
+    ((eq t tag) tasks)
+    ((eq nil tag) (remove-if #^(get-tags $1) tasks))
+    (t (let ((tag-id (get-tag-id tag)))
+         (remove-if-not #^(member tag-id (get-tags $1)) tasks)))))
 
 (defun filter-by-deadline (deadline tasks)
-  (let ((compare-fn (intern (mkstr 'time (car deadline)) :clsql)))
-    (remove-if-not #'(lambda (task)
-                       (and (get-deadline task)
-                            (funcall compare-fn
-                                     (get-deadline task) (cadr deadline))))
-                   tasks)))
+  (if deadline
+      (let ((compare-fn (intern (mkstr 'time (car deadline)) :clsql)))
+        (remove-if-not #'(lambda (task)
+                           (and (get-deadline task)
+                                (funcall compare-fn
+                                         (get-deadline task) (cadr deadline))))
+                       tasks))
+      tasks))
 
 (defun list-task (&key tag deadline)
-  (filter-> (clsql:select 'task :flatp t)
-            tag deadline))
+  (aand (clsql:select 'task :flatp t)
+        (filter-by-tag tag it)
+        (filter-by-deadline deadline it)))

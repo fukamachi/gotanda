@@ -30,7 +30,10 @@
 (defmacro define-action (name args &body body)
   `(dispatch :define (make-keyword ',name) (lambda ,args ,@body)))
 
-(define-action list (&optional tag deadline)
+(define-action all ()
+  (dispatch :do :tag t))
+
+(define-action tag (&optional (tag nil) deadline)
   (setf *list-items*
         (list-task :tag tag
                    :deadline (and deadline
@@ -84,6 +87,7 @@
 
 (defun run-dispatch (args)
   (if (#~m/^\d+$/ (car args)) (push :action-for args))
+  (if (#~m/#\w+/ (car args)) (push :tag args))
   (apply #'dispatch :do (make-keyword (car args)) (cdr args)))
 
 (format *terminal-io* "Done.~%")
