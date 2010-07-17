@@ -10,6 +10,7 @@
 ;; Initialize
 ;;====================
 (in-package :clsql)
+(got:initialize-database)
 (start-transaction)
 
 ;; drop all tables and create it again

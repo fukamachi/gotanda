@@ -3,4 +3,4 @@
 (defpackage gotanda
   (:nicknames got)
   (:use #:cl)
-  (:export #:create-task #:list-task))
+  (:export #:initialize-database #:create-task #:list-task #:get-body #:str->date))
