@@ -2,7 +2,7 @@
 
 ## Qualification
 
-This software is developed with SBCL 1.0.32.
+This software is developed with SBCL 1.0.32 on MacOS 10.6.
 
 Depends on CLSQL and cl-ppcre.
 
@@ -21,34 +21,70 @@ asdf-install should resolve dependencies, but not works better. So, you may have
 
 Have another problem? Report me.
 
-## Run
+## Quick Start
 
     * (asdf:oos 'asdf:load-op :gotanda)
     * (got:create-task :body "Buy Milk")
 
-You can use from your terminal. "got" is a command line program.
-
-    $ got create task --body "Buy Milk"
-    New Task: Buy Milk
-
 ## Command Line Interface
 
-* New Task
+### Build
 
-    Usage: got create task \[--body "BODY"\]\[--deadline "yyyy-MM-dd hh:mm:ss"\]
-    
-      --body: write some texts for a description of the task.
-    
-      --deadline: write it's deadline
+    $ sbcl --load build.lisp
+    ;; blah blah blah
+    ;; ..created an executable script, "got"
 
-* See Tasks
+### Run
 
-    Usage: got list task \[--tag "#hashtag"\]\[--deadline "pred yyyy-MM-dd"\]
-    
-      --tag: specify hashtag (begin with '#').
-    
-      --deadline: filter with a deadline, before or after. Below example shows a list of tasks which the deadline is after "2003-04-07".
-          got list task --deadline "< 2003-04-07"
+    $ got
+    >
+
+">" is a prompt. Then you can do below actions.
+
+* all
+* tag #hashtag
+* #hashtag (same as above)
+* create "body" "yyyy-MM-dd(deadline)"
+* edit
+* delete
+* complete (not implemented yet)
+
+### Examples
+
+First, start "got" and see all tasks.
+
+    $ got
+    > all
+    1: Buy Milk #shopping
+    2: Read "SoftwareDesign"
+    3: Fix Bugs
+
+The numbers on the left side of each lines are index for next action. You can choose a task to type the number.
+
+If you were to edit 2nd task,
+
+    > 2
+    What Action?>
+
+...the prompt of next line was changed.
+
+    What Action?> edit
+    Body?> Read "SoftwareDesign" carefully
+    Deadline> [Return]
+    >
+
+So, the 2nd task is changed.
+
+    > all
+    1: Buy Milk #shopping
+    2: Read "SoftwareDesign" carefully
+    3: Fix Bugs
+
+You can filter the tasks with #hashtag.
+
+    > #shopping
+    1: Buy Milk #shopping
+    >
 
 ## Roadmap
 
