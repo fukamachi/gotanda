@@ -16,6 +16,12 @@
 (setf hunchentoot:*hunchentoot-default-external-format* (flex:make-external-format :utf-8 :eof-style :lf))
 (setf hunchentoot:*default-content-type* "text/html; charset=utf-8")
 
+(defmacro defpage (name property &body body)
+  (declare (ignore name))
+  `(with-html-output-to-string (*standard-output* nil :prologue t)
+     (htm
+      (:head (:title (str ,(getf property :title)))) ,@body)))
+
 (defun list-view (&key tag deadline)
   (let ((tasks (list-task
                 :tag tag
@@ -23,18 +29,21 @@
                                (destructuring-bind (compare-fn datestr)
                                    (cl-ppcre:split #\Space deadline)
                                  (list (intern compare-fn) (str->date datestr)))))))
-    (with-html-output-to-string (*standard-output* nil :prologue t)
+    (with-html-output (*standard-output* nil)
       (loop for task in tasks
-           for body = (get-body task)
-           for deadline = (get-deadline task)
+         for body = (get-body task)
+         for deadline = (get-deadline task)
          do (htm
              (:b (str body))
              (if deadline (htm (:span " [" (str deadline) "]")))
              :br)))))
 
-(define-easy-handler (all :uri "/") () (list-view :tag t))
+(define-easy-handler (all :uri "/") ()
+  (defpage tag-list (:title "All Tasks")
+      (list-view :tag t)))
 
 (define-easy-handler (tag :uri "/tag") (name deadline)
-  (list-view :tag name :deadline deadline))
+  (defpage all-tasks-list (:title (format nil "Tag: ~:[[none]~;~a~]" name))
+      (list-view :tag name :deadline deadline)))
 
 (defvar *server* (hunchentoot:start (make-instance 'hunchentoot:acceptor :port 8080)))
