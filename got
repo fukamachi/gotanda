@@ -12,6 +12,7 @@
 
 (in-package :got)
 
+(cl-interpol:enable-interpol-syntax)
 (defvar *list-items* nil)
 
 (defun make-keyword (symb)
@@ -40,13 +41,11 @@
                                   (destructuring-bind (compare-fn datestr)
                                       (cl-ppcre:split #\Space deadline)
                                     (list (intern compare-fn) (str->date datestr))))))
-  (format t "~{~{~a: ~a ~@[[~a]~]~}~%~}"
-          (loop for task in *list-items*
-             for i = 1 then (1+ i)
-             collect `(,(color:style (:gray) i)
-                        ,(color:style (:cyan) (get-body task))
-                        ,(aand (get-deadline task)
-                               (color:style (:gray) it))))))
+  (loop for task in *list-items*
+     for i = 1 then (1+ i)
+     do (format t
+                #?"${(color:style (:gray) i)}: ${(color:style (:cyan) (get-body task))} ~@\[[~a]~]~%"
+                (aand (get-deadline task) (color:style (:gray) it)))))
 
 (define-action create (&optional body deadline)
   (let ((task (create-task
@@ -83,7 +82,7 @@
           (dispatch :do :error "Invalid action")))))
 
 (define-action error (form &rest args)
-  (apply #'format t (concatenate 'string form "~%") args))
+  (apply #'format t #?"${form}~%" args))
 
 (defun run-dispatch (args)
   (if (#~m/^\d+$/ (car args)) (push :action-for args))
