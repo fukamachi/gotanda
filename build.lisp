@@ -84,6 +84,7 @@
   (apply #'dispatch :do (make-keyword (car args)) (cdr args)))
 
 (defun main ()
+  (initialize-database)
   (loop for input = (prompt-read ">")
      with clsql:*default-caching* = nil
      until (eq nil input)

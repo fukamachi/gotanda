@@ -1,7 +1,5 @@
 (in-package :got)
 
-(defvar *db* (clsql:connect '("gotan.db") :database-type :sqlite3 :if-exists :old))
-
 (clsql:def-view-class task ()
   ((id
     :db-kind :key
@@ -48,7 +46,9 @@
     :accessor get-name))
   (:base-table tag))
 
-;; create tables if it does not exist
-(dolist (table '(task tag))
-  (or (clsql:table-exists-p (symbol-name table))
-      (clsql:create-view-from-class table)))
+(defun initialize-database ()
+  ;; create tables if it does not exist
+  (defvar *db* (clsql:connect '("gotan.db") :database-type :sqlite3 :if-exists :old))
+  (dolist (table '(task tag))
+    (or (clsql:table-exists-p (symbol-name table))
+        (clsql:create-view-from-class table))))
