@@ -1,14 +1,8 @@
-#!/usr/local/bin/sbcl --script
 ;; -*- Mode: Lisp -*-
 
-(format *terminal-io* "Loading...")
-(force-output *terminal-io*)
-
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (let ((*standard-output* (make-broadcast-stream)))
-    (require 'asdf)
-    (require 'gotanda)
-    (load "color")))
+  (require 'gotanda)
+  (load "color"))
 
 (in-package :got)
 
@@ -89,10 +83,11 @@
   (if (#~m/#\w+/ (car args)) (push :tag args))
   (apply #'dispatch :do (make-keyword (car args)) (cdr args)))
 
-(format *terminal-io* "Done.~%")
-
-(loop for input = (prompt-read ">")
+(defun main ()
+  (loop for input = (prompt-read ">")
      with clsql:*default-caching* = nil
      until (eq nil input)
      unless (string= "" input)
-     do (run-dispatch (split-params input)))
+     do (run-dispatch (split-params input))))
+
+(sb-ext:save-lisp-and-die "got" :toplevel #'main :executable t)
