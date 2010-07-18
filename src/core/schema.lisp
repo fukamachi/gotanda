@@ -24,27 +24,7 @@
     :accessor get-tags
     :type list
     :initarg :tags
-    :initform nil)
-   (tag-id
-    :db-kind :join
-    :db-info (:join-class tag
-              :home-key tags
-              :foreign-key id
-              :set nil))))
-
-(clsql:def-view-class tag ()
-  ((id
-    :db-kind :key
-    :accessor get-id
-    :db-constraints (:not-null :unique)
-    :type integer
-    :initarg :id)
-   (name
-    :accessor get-name
-    :db-constraints (:not-null :unique)
-    :type string
-    :initarg :name
-    :accessor get-name)))
+    :initform nil)))
 
 (clsql:def-view-class history ()
   ((id
@@ -82,6 +62,6 @@
          (asdf:system-relative-pathname (asdf:find-system :gotanda) "gotan.db")))
      :database-type :sqlite3
      :if-exists :old))
-  (dolist (table '(task tag))
+  (dolist (table '(task))
     (or (clsql:table-exists-p (symbol-name table))
         (clsql:create-view-from-class table))))
