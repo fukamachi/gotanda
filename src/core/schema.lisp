@@ -72,8 +72,7 @@
    (date
     :accessor get-date
     :type clsql:wall-time
-    :initform (clsql:get-time)))
-  (:base-table history))
+    :initform (clsql:get-time))))
 
 (defun initialize-database ()
   ;; create tables if it does not exist
