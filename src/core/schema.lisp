@@ -3,11 +3,9 @@
 (clsql:def-view-class task ()
   ((id
     :db-kind :key
+    :accessor get-id
     :db-constraints (:not-null :unique)
-    :type integer
-    :initarg :id
-    :initform nil
-    :accessor get-id)
+    :type integer)
    (body
     :accessor get-body
     :type (string 1400)
@@ -38,17 +36,45 @@
 (clsql:def-view-class tag ()
   ((id
     :db-kind :key
+    :accessor get-id
+    :db-constraints (:not-null :unique)
+    :type integer
+    :initarg :id)
+   (name
+    :accessor get-name
+    :db-constraints (:not-null :unique)
+    :type string
+    :initarg :name))
+  (:base-table tag))
+
+(clsql:def-view-class history ()
+  ((id
+    :db-kind :key
+    :accessor get-id
     :db-constraints (:not-null :unique)
     :type integer
     :initarg :id
-    :initform nil
-    :accessor get-id)
-   (name
-    :db-constraints (:not-null :unique)
-    :type string
-    :initarg :name
-    :accessor get-name))
-  (:base-table tag))
+    :initform nil)
+   (target
+    :accessor get-target
+    :db-constraints (:not-null)
+    :type symbol
+    :initarg :target)
+   (field
+    :accessor get-field
+    :db-constraints (:not-null)
+    :type symbol
+    :initarg :target)
+   (action
+    :accessor get-action
+    :db-constraints (:not-null)
+    :type keyword
+    :initarg :action)
+   (date
+    :accessor get-date
+    :type clsql:wall-time
+    :initform (clsql:get-time)))
+  (:base-table history))
 
 (defun initialize-database ()
   ;; create tables if it does not exist
