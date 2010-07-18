@@ -32,8 +32,7 @@
     :db-info (:join-class tag
               :home-key tags
               :foreign-key id
-              :set nil)))
-  (:base-table task))
+              :set nil))))
 
 (clsql:def-view-class tag ()
   ((id
@@ -47,8 +46,7 @@
     :db-constraints (:not-null :unique)
     :type string
     :initarg :name
-    :accessor get-name))
-  (:base-table tag))
+    :accessor get-name)))
 
 (defun initialize-database ()
   ;; create tables if it does not exist
