@@ -48,29 +48,30 @@
                :deadline (or deadline (prompt-read "Deadline?>")))))
     (format t "New Task: ~a~%" (get-body task))))
 
-(define-action edit (index-string &optional body deadline)
-  (let* ((idx (- (parse-integer index-string) 1))
-         (task (nth idx *list-items*)))
-    (case task
-      ((NIL) (dispatch :do :error "Out of range."))
-      ((DELETED) (dispatch :do :error "It is already deleted."))
-      (t (edit-task task
-                    :body (or body (prompt-read "Body?>"))
-                    :deadline (or deadline (prompt-read "Deadline?>")))))))
+(defmacro! define-action/index (name vars args &body body)
+  (let ((idx (getf vars :index (gensym)))
+        (var (getf vars :var (gensym))))
+    `(define-action ,name (,g!index ,@args)
+       (let* ((,idx (- (parse-integer ,g!index) 1))
+              (,var (nth ,idx *list-items*)))
+         (case ,var
+           ((NIL) (dispatch :do :error "Out of range."))
+           ((DELETED) (dispatch :do :error "It is already deleted."))
+           (t ,@body))))))
 
-(define-action delete (index-string)
-  (let* ((idx (- (parse-integer index-string) 1))
-         (task (nth idx *list-items*)))
-    (case task
-      ((NIL) (dispatch :do :error "Out of range."))
-      ((DELETED) (dispatch :do :error "It is already deleted."))
-      (t (delete-task task)
-         (setf (nth idx *list-items*) 'DELETED)))))
+(define-action/index edit (:var task) (&optional body deadline)
+  (edit-task task
+             :body (or body (prompt-read "Body?>"))
+             :deadline (or deadline (prompt-read "Deadline?>"))))
+
+(define-action/index delete (:var task :index idx) ()
+  (delete-task task)
+  (setf (nth idx *list-items*) 'DELETED))
 
 (define-action action-for (n)
   (destructuring-bind (action &rest args)
       (loop for params = (split-params (prompt-read "What action?>"))
-           if params return params)
+         if params return params)
     (let ((action-kwd (make-keyword action)))
       (if (member action-kwd '(:edit :delete))
           (dispatch :do action-kwd n args)
@@ -80,8 +81,9 @@
   (apply #'format t #?"${form}~%" args))
 
 (defun run-dispatch (args)
-  (if (#~m/^\d+$/ (car args)) (push :action-for args))
-  (if (#~m/#\w+/ (car args)) (push :tag args))
+  (cond
+    ((#~m/^\d+$/ (car args)) (push :action-for args))
+    ((#~m/#\w+/ (car args)) (push :tag args)))
   (apply #'dispatch :do (make-keyword (car args)) (cdr args)))
 
 (defun main ()
