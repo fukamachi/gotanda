@@ -30,7 +30,7 @@ Have another problem? Report me.
 
 ### Build
 
-    $ sbcl --load build.lisp
+    $ sbcl --load src/cli/build.lisp
     ;; blah blah blah
     ;; ..created an executable script, "got"
 

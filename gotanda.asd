@@ -3,7 +3,7 @@
   :author "Eitarow Fukamachi"
   :depends-on (:clsql :cl-ppcre :cl-interpol)
   :serial t
-  :components ((:file "package")
-               (:file "utils")
-               (:file "schema")
-               (:file "core")))
+  :components ((:file "src/core/package")
+               (:file "src/core/utils")
+               (:file "src/core/schema")
+               (:file "src/core/core")))

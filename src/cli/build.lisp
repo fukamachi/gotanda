@@ -1,8 +1,9 @@
 ;; -*- Mode: Lisp -*-
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
+  (require 'asdf)
   (require 'gotanda)
-  (load "color"))
+  (load (merge-pathnames "color.lisp" *load-pathname*)))
 
 (in-package :got)
 
