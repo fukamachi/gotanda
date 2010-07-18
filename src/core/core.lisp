@@ -16,26 +16,11 @@
    (cl-ppcre:all-matches-as-strings "(?:(?<=\\W)|(?<=^))#\\w+" body)
    :test #'string=))
 
-(defun create-tag-if-not-exists (name-dirty)
-  (let ((name (string-downcase name-dirty)))
-    (aif (select-one tag :name name)
-         it
-         (progn
-           (clsql:insert-records :into 'tag :av-pairs `((name ,name)))
-           (select-one tag :name name)))))
-
-(defun get-tag-id (name)
-  (car (clsql:select 'id :from 'tag :where (clsql:sql-operation '= 'name name) :flatp t)))
-
-(defun get-tag-ids (&rest names)
-  (clsql:select 'id :from 'tag :where (clsql:sql-operation 'in 'name names) :flatp t))
-
 (defun update-task (task &key body deadline)
   (let ((tag-names (parse-tags body)))
-    (dolist (tag tag-names) (create-tag-if-not-exists tag))
     (setf (slot-value task 'body) body)
     (setf (slot-value task 'deadline) (str->date deadline))
-    (setf (slot-value task 'tags) (get-tag-ids tag-names))
+    (setf (slot-value task 'tags) tag-names)
     (clsql:update-records-from-instance task)
     task))
 
@@ -59,8 +44,7 @@
   (cond
     ((eq t tag) tasks)
     ((eq nil tag) (remove-if #^(get-tags $1) tasks))
-    (t (let ((tag-id (get-tag-id tag)))
-         (remove-if-not #^(member tag-id (get-tags $1)) tasks)))))
+    (t (remove-if-not #^(member tag (get-tags $1) :test #'string=) tasks))))
 
 (defun filter-by-deadline (deadline tasks)
   (if deadline
