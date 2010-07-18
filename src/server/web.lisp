@@ -1,18 +1,8 @@
-(require 'hunchentoot)
-(require 'cl-who)
-(require 'gotanda)
-
-(in-package :cl-user)
-
-(defpackage gotanda-web
-  (:use #:cl #:hunchentoot #:cl-who #:gotanda)
-  (:import-from #:hunchentoot define-easy-handler)
-  (:import-from #:cl-who with-html-output-to-string htm))
-
-(in-package :gotanda-web)
+(in-package :gotanda-server)
 
 (got:enable-read-macros)
 (got:initialize-database)
+
 (setf hunchentoot:*hunchentoot-default-external-format* (flex:make-external-format :utf-8 :eof-style :lf))
 (setf hunchentoot:*default-content-type* "text/html; charset=utf-8")
 (setf hunchentoot:*show-lisp-errors-p* t)
