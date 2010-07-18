@@ -11,6 +11,7 @@
 
 (in-package :gotanda-web)
 
+(got:enable-read-macros)
 (got:initialize-database)
 (setf hunchentoot:*hunchentoot-default-external-format* (flex:make-external-format :utf-8 :eof-style :lf))
 (setf hunchentoot:*default-content-type* "text/html; charset=utf-8")
@@ -29,10 +30,17 @@
            (:input :type "text" :name "body")
            (:input :type "submit" :value "Add"))))
 
+(defun make-hashtag (match &rest registers)
+  (format nil "<a href='/tag?name=%23~a'>~a</a>" (car registers) match))
+
 (defun task/ (stream id body deadline)
   (with-html-output (stream)
     (:input :type "checkbox" :name "id" :value id)
-    (:b (str body))
+    (:b (str (cl-ppcre:regex-replace-all
+              "#(\\w+)"
+              body
+              #'make-hashtag
+              :simple-calls t)))
     (if deadline (htm (:span " [" (str deadline) "]")))
     :br))
 
@@ -41,6 +49,7 @@
     (:form :method "POST" :action "/delete"
            (:input :type "submit" :value "Delete")
            (:input :type "submit" :value "Finish" :disabled "true")
+           (:a :href "/" "[Home]")
            :br
            (loop for task in tasks
               do (task/ stream (get-id task) (get-body task) (get-deadline task))))
