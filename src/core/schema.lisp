@@ -52,7 +52,12 @@
 
 (defun initialize-database ()
   ;; create tables if it does not exist
-  (defvar *db* (clsql:connect '("gotan.db") :database-type :sqlite3 :if-exists :old))
+  (defvar *db*
+    (clsql:connect
+     `(,(namestring
+         (asdf:system-relative-pathname (asdf:find-system :gotanda) "gotan.db")))
+     :database-type :sqlite3
+     :if-exists :old))
   (dolist (table '(task tag))
     (or (clsql:table-exists-p (symbol-name table))
         (clsql:create-view-from-class table))))
