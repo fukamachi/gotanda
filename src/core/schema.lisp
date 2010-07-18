@@ -30,8 +30,7 @@
     :db-info (:join-class tag
               :home-key tags
               :foreign-key id
-              :set nil)))
-  (:base-table task))
+              :set nil))))
 
 (clsql:def-view-class tag ()
   ((id
@@ -44,8 +43,8 @@
     :accessor get-name
     :db-constraints (:not-null :unique)
     :type string
-    :initarg :name))
-  (:base-table tag))
+    :initarg :name
+    :accessor get-name)))
 
 (clsql:def-view-class history ()
   ((id
