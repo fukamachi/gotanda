@@ -51,6 +51,10 @@
 (defun delete-task-by-id (id)
   (delete-task (select-one task :id id)))
 
+(defun finish-task (task)
+  (setf (is-finished task) t)
+  (clsql:update-records-from-instance task))
+
 (defun filter-by-tag (tag tasks)
   (cond
     ((eq t tag) tasks)

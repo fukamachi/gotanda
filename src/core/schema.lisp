@@ -18,6 +18,10 @@
     :type clsql:wall-time
     :initform nil
     :initarg :deadline)
+   (is-finished
+    :accessor finished-p
+    :type boolean
+    :initform nil)
    (tags
     :accessor get-tags
     :type list
