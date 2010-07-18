@@ -7,8 +7,7 @@
 (defpackage gotanda-web
   (:use #:cl #:hunchentoot #:cl-who #:gotanda)
   (:import-from #:hunchentoot define-easy-handler)
-  (:import-from #:cl-who with-html-output-to-string htm)
-  (:import-from #:gotanda))
+  (:import-from #:cl-who with-html-output-to-string htm))
 
 (in-package :gotanda-web)
 
@@ -30,23 +29,28 @@
            (:input :type "text" :name "body")
            (:input :type "submit" :value "Add"))))
 
-(defun task/ (stream body deadline)
+(defun task/ (stream id body deadline)
   (with-html-output (stream)
+    (:input :type "checkbox" :name "id" :value id)
     (:b (str body))
     (if deadline (htm (:span " [" (str deadline) "]")))
     :br))
 
 (defun task-list/ (stream tasks)
   (with-html-output (stream)
-    (loop for task in tasks
-       do (task/ stream (get-body task) (get-deadline task)))
+    (:form :method "POST" :action "/delete"
+           (:input :type "submit" :value "Delete")
+           (:input :type "submit" :value "Finish" :disabled "true")
+           :br
+           (loop for task in tasks
+              do (task/ stream (get-id task) (get-body task) (get-deadline task))))
     (create-form/ stream)))
 
 (defun list-view (&key tag deadline)
   (with-html-output (*standard-output*)
     (task-list/
      *standard-output*
-     (list-task
+     (got:list-task
       :tag tag
       :deadline (and deadline
                      (destructuring-bind (compare-fn datestr)
@@ -64,7 +68,12 @@
 
 (define-easy-handler (create :uri "/create") (body)
   (defpage create-request ()
-    (create-task :body body)
+    (got:create-task :body body)
+    (hunchentoot:redirect "/")))
+
+(define-easy-handler (del :uri "/delete") (id)
+  (defpage delete-request ()
+    (got:delete-task-by-id id)
     (hunchentoot:redirect "/")))
 
 (defvar *server* (hunchentoot:start (make-instance 'hunchentoot:acceptor :port 8080)))

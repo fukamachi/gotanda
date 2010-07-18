@@ -45,6 +45,12 @@
 (defun edit-task (task &key body deadline)
   (update-task task :body body :deadline deadline))
 
+(defun delete-task (task)
+  (clsql:delete-instance-records task))
+
+(defun delete-task-by-id (id)
+  (delete-task (select-one task :id id)))
+
 (defun filter-by-tag (tag tasks)
   (cond
     ((eq t tag) tasks)

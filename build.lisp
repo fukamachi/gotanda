@@ -63,7 +63,7 @@
     (case task
       ((NIL) (dispatch :do :error "Out of range."))
       ((DELETED) (dispatch :do :error "It is already deleted."))
-      (t (clsql:delete-instance-records task)
+      (t (delete-task task)
          (setf (nth idx *list-items*) 'DELETED)))))
 
 (define-action action-for (n)
