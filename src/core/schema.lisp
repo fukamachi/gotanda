@@ -18,7 +18,7 @@
     :type clsql:wall-time
     :initform nil
     :initarg :deadline)
-   (is-finished
+   (finished-p
     :accessor finished-p
     :type boolean
     :initform nil)

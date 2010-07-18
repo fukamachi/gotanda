@@ -52,7 +52,7 @@
   (delete-task (select-one task :id id)))
 
 (defun finish-task (task)
-  (setf (is-finished task) t)
+  (setf (finished-p task) t)
   (clsql:update-records-from-instance task))
 
 (defun filter-by-tag (tag tasks)
@@ -74,5 +74,6 @@
 
 (defun list-task (&key tag deadline)
   (aand (clsql:select 'task :flatp t)
+        (remove-if #'finished-p it)
         (filter-by-tag tag it)
         (filter-by-deadline deadline it)))

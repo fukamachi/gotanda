@@ -68,13 +68,16 @@
   (delete-task task)
   (setf (nth idx *list-items*) 'DELETED))
 
+(define-action/index finish (:var task) ()
+  (finish-task task))
+
 (define-action action-for (n)
   (destructuring-bind (action &rest args)
       (loop for params = (split-params (prompt-read "What action?>"))
          if params return params)
     (let ((action-kwd (make-keyword action)))
-      (if (member action-kwd '(:edit :delete))
-          (dispatch :do action-kwd n args)
+      (if (member action-kwd '(:edit :delete :finish))
+          (apply #'dispatch :do action-kwd n args)
           (dispatch :do :error "Invalid action")))))
 
 (define-action error (form &rest args)
