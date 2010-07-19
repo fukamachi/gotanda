@@ -5,6 +5,7 @@
     (require 'cl-interpol)
     (require 'gotanda)))
 (cl-interpol:enable-interpol-syntax)
+(clsql:enable-sql-reader-syntax)
 
 ;;====================
 ;; Initialize
@@ -56,7 +57,8 @@
   (assert-eq nil (select-one task :body "Buy Milk #shopping"))
   (let ((task (create-task :body "Buy Milk #shopping")))
     (assert-true task)
-    (assert-equal "Buy Milk #shopping" (get-body task)))
+    (assert-equal "Buy Milk #shopping" (get-body task))
+    (assert-true (car (clsql:select 'history :flatp t))))
   (let ((task (select-one task :body "Buy Milk #shopping")))
     (assert-true task)
     (assert-equal 1 (get-id task))

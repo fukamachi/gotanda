@@ -5,16 +5,16 @@
     :db-kind :key
     :accessor get-id
     :db-constraints (:not-null :unique)
-    :type integer)
+    :type integer
+    :initform nil)
    (body
     :accessor get-body
     :type (string 1400)
-    :initform ""
+    :void-value ""
     :initarg :body)
    (deadline
     :accessor get-deadline
     :type clsql:wall-time
-    :initform nil
     :initarg :deadline)
    (finished-p
     :accessor finished-p
@@ -26,7 +26,7 @@
     :initarg :tags
     :initform nil)))
 
-(clsql:def-view-class history ()
+(clsql:def-view-class history (task)
   ((id
     :db-kind :key
     :accessor get-id
@@ -34,25 +34,30 @@
     :type integer
     :initarg :id
     :initform nil)
-   (target
-    :accessor get-target
-    :db-constraints (:not-null)
-    :type symbol
-    :initarg :target)
-   (field
-    :accessor get-field
-    :db-constraints (:not-null)
-    :type symbol
-    :initarg :target)
+   (task-id
+    :accessor get-task-id
+    :type integer
+    :initarg :task-id)
+   (task-info
+    :accessor get-task
+    :db-kind :join
+    :db-info (:join-class task
+              :home-key task-id
+              :foreign-key id))
    (action
     :accessor get-action
-    :db-constraints (:not-null)
-    :type keyword
+    :db-constraints :not-null
+    :type string
     :initarg :action)
-   (date
-    :accessor get-date
-    :type clsql:wall-time
-    :initform (clsql:get-time))))
+   (fields
+    :accessor get-fields
+    :type list
+    :initarg :fields
+    :initform nil)
+   (timestamp
+    :accessor get-timestamp
+    :type universal-time
+    :initform (get-universal-time))))
 
 (defun initialize-database ()
   ;; create tables if it does not exist
@@ -62,6 +67,8 @@
          (asdf:system-relative-pathname (asdf:find-system :gotanda) "gotan.db")))
      :database-type :sqlite3
      :if-exists :old))
-  (dolist (table '(task))
-    (or (clsql:table-exists-p (symbol-name table))
-        (clsql:create-view-from-class table))))
+  (or (clsql:table-exists-p "TASK") (clsql:create-view-from-class 'task))
+  (when (not (clsql:table-exists-p "HISTORY"))
+    (clsql:create-view-from-class 'history)
+    (clsql:create-index 'timestamp-index :on 'history
+                        :attributes '(timestamp))))

@@ -16,29 +16,49 @@
    (cl-ppcre:all-matches-as-strings "(?:(?<=\\W)|(?<=^))#\\w+" body)
    :test #'string=))
 
-(defun update-task (task &key body deadline)
-  (let ((tag-names (parse-tags body)))
-    (setf (slot-value task 'body) body)
-    (setf (slot-value task 'deadline) (str->date deadline))
-    (setf (slot-value task 'tags) tag-names)
-    (clsql:update-records-from-instance task)
-    task))
+(defun insert-history (task-id action &optional fields)
+  (clsql:insert-records :into 'history
+                        :attributes '(task_id action fields)
+                        :values `(,task-id ,action ,(format nil "~a" fields))))
 
 (defun create-task (&key body deadline)
-  (update-task (make-instance 'task) :body body :deadline deadline))
+  (let* ((id (caar (clsql:query "SELECT MAX(ID) FROM TASK")))
+         (task (make-instance 'task
+                              :id id
+                              :body body
+                              :tags (parse-tags body)
+                              :deadline (str->date deadline))))
+    (clsql:update-records-from-instance task)
+    (insert-history id "create")
+    task))
 
 (defun edit-task (task &key body deadline)
-  (update-task task :body body :deadline deadline))
+  (let (fields)
+    (unless (string= body (slot-value task 'body))
+      (setf (slot-value task 'body) body)
+      (setf (slot-value task 'tags) (parse-tags body))
+      (push "BODY" fields))
+    (unless (cond ((eq nil deadline) (eq nil (slot-value task 'deadline)))
+                  ((eq nil (slot-value task 'deadline)) nil)
+                  (t (clsql:time= (slot-value task 'deadline) deadline)))
+      (setf (slot-value task 'deadline) (str->date deadline))
+      (push "DEADLINE" fields))
+    (when fields
+      (clsql:update-records-from-instance task)
+      (insert-history (get-id task) "edit" fields)))
+  task)
 
 (defun delete-task (task)
-  (clsql:delete-instance-records task))
+  (clsql:delete-instance-records task)
+  (insert-history (get-id task) "delete"))
 
 (defun delete-task-by-id (id)
   (delete-task (select-one task :id id)))
 
 (defun finish-task (task)
   (setf (finished-p task) t)
-  (clsql:update-records-from-instance task))
+  (clsql:update-records-from-instance task)
+  (insert-history (get-id task) "finish"))
 
 (defun filter-by-tag (tag tasks)
   (cond
