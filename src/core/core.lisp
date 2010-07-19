@@ -3,13 +3,17 @@
 (enable-read-macros)
 
 (defun build-where (&rest args)
-  (apply #'clsql:sql-operation 'and
-         (loop for (k v) in (group args 2)
-            unless (null v)
-            collect (clsql:sql-operation '= (intern (string k)) v))))
+  (if args
+      (apply #'clsql:sql-operation 'and
+             (loop for (k v) in (group args 2)
+                unless (null v)
+                collect (clsql:sql-operation '= (intern (string k)) v)))))
 
-(defmacro select-one (table &rest args)
-  `(car (clsql:select ',table :where (build-where ,@args) :limit 1 :flatp t)))
+(defmacro! select-one (table &rest args)
+  `(let ((,g!plist '(:limit 1 :flatp t))
+         (,g!where (apply #'build-where (list ,@args))))
+     (if ,g!where (setf ,g!plist (append ,g!plist (list :where ,g!where))))
+     (car (apply #'clsql:select ',table ,g!plist))))
 
 (defun parse-tags (body)
   (remove-duplicates
@@ -22,7 +26,7 @@
                         :values `(,task-id ,action ,(format nil "~a" fields))))
 
 (defun create-task (&key body deadline)
-  (let* ((id (caar (clsql:query "SELECT MAX(ID) FROM TASK")))
+  (let* ((id (or (caar (clsql:query "SELECT MAX(ID) FROM TASK")) 1))
          (task (make-instance 'task
                               :id id
                               :body body

@@ -36,6 +36,7 @@
     :initform nil)
    (task-id
     :accessor get-task-id
+    :db-constraints :not-null
     :type integer
     :initarg :task-id)
    (task-info
