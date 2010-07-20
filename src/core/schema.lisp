@@ -7,6 +7,10 @@
     :db-constraints (:not-null :unique)
     :type integer
     :initform nil)
+   (global-id
+    :db-constraints :unique
+    :type integer
+    :initform nil)
    (body
     :accessor get-body
     :type (string 1400)
@@ -20,43 +24,19 @@
     :accessor finished-p
     :type boolean
     :initform nil)
+   (deleted-p
+    :accessor deleted-p
+    :type boolean
+    :initform nil)
    (tags
     :accessor get-tags
     :type list
     :initarg :tags
-    :initform nil)))
-
-(clsql:def-view-class history (task)
-  ((id
-    :db-kind :key
-    :accessor get-id
-    :db-constraints (:not-null :unique)
-    :type integer
-    :initarg :id
     :initform nil)
-   (task-id
-    :accessor get-task-id
-    :db-constraints :not-null
+   (created-at
     :type integer
-    :initarg :task-id)
-   (task-info
-    :accessor get-task
-    :db-kind :join
-    :db-info (:join-class task
-              :home-key task-id
-              :foreign-key id))
-   (action
-    :accessor get-action
-    :db-constraints :not-null
-    :type string
-    :initarg :action)
-   (fields
-    :accessor get-fields
-    :type list
-    :initarg :fields
-    :initform nil)
-   (timestamp
-    :accessor get-timestamp
+    :initform (get-universal-time))
+   (updated-at
     :type integer
     :initform (get-universal-time))))
 
@@ -68,8 +48,4 @@
          (asdf:system-relative-pathname (asdf:find-system :gotanda) "gotan.db")))
      :database-type :sqlite3
      :if-exists :old))
-  (or (clsql:table-exists-p "TASK") (clsql:create-view-from-class 'task))
-  (when (not (clsql:table-exists-p "HISTORY"))
-    (clsql:create-view-from-class 'history)
-    (clsql:create-index 'timestamp-index :on 'history
-                        :attributes '(timestamp))))
+  (or (clsql:table-exists-p "TASK") (clsql:create-view-from-class 'task)))

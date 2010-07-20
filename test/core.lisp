@@ -55,12 +55,9 @@
 
 (define-test create-task
   (assert-eq nil (select-one task :body "Buy Milk #shopping"))
-  (let ((task (create-task :body "Buy Milk #shopping"))
-        (history (car (clsql:select 'history :order-by '(([timestamp] :desc)) :flatp t))))
+  (let ((task (create-task :body "Buy Milk #shopping")))
     (assert-true task)
-    (assert-equal "Buy Milk #shopping" (get-body task))
-    (assert-true history)
-    (assert-equal "create" (get-action history)))
+    (assert-equal "Buy Milk #shopping" (get-body task)))
   (let ((task (select-one task :body "Buy Milk #shopping")))
     (assert-true task)
     (assert-equal 1 (get-id task))
@@ -68,8 +65,7 @@
 
 (define-test edit-task
   (let ((task (select-one task)))
-    (edit-task task :body "Editted")
-    (assert-true (select-one history :task_id (get-id task) :action "edit"))))
+    (edit-task task :body "Editted")))
 
 (define-test list-task
   (create-task :body "Produce Astro Boy #invent" :deadline "2003-04-07")
