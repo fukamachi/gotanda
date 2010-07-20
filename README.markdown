@@ -13,8 +13,6 @@ asdf-install should resolve dependencies, but not works better. So, you may have
     $ cd ~/.sbcl/site
     $ git clone git://github.com/fukamachi/gotanda.git
     $ ln -s gotanda/gotanda.asd ../systems
-    $ cd /path/to/clsql-x.x.x/db-sqlite3
-    $ patch -p0 < ~/.sbcl/site/gotanda/clsql-sqlite3-auto-increment.patch
     $ sbcl
     * (require 'asdf)
     * (asdf:oos 'asdf:load-op :gotanda)
