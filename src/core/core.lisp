@@ -26,7 +26,7 @@
                         :values `(,task-id ,action ,(format nil "~a" fields))))
 
 (defun create-task (&key body deadline)
-  (let* ((id (or (caar (clsql:query "SELECT MAX(ID) FROM TASK")) 1))
+  (let* ((id (1+ (or (caar (clsql:query "SELECT MAX(ID) FROM TASK")) 0)))
          (task (make-instance 'task
                               :id id
                               :body body

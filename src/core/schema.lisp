@@ -57,7 +57,7 @@
     :initform nil)
    (timestamp
     :accessor get-timestamp
-    :type universal-time
+    :type integer
     :initform (get-universal-time))))
 
 (defun initialize-database ()
